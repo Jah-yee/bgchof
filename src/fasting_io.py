@@ -19,20 +19,20 @@ BGCHOF_CFG_CFG_DATAFILE_PREFIX = Path(
 CFG_DATAFILE_MODE = 0o777
 
 
-def read_fasting_list(input_year: int) -> list[str] | None:
+def read_fasting_list(input_year: int) -> list[int] | None:
     """Load contents of .csv cache file into a list.
 
     Args:
         input_year: int representing the year for which to load the cache file.
 
     Returns:
-        A list of status values (as strings) for each day of the year,
+        A list of status values (as integers) for each day of the year,
         or None if the cache file doesn't exist.
 
     Raises:
         FileNotFoundError: if cache file doesn't exist. Returns None instead.
     """
-    fasting_list: list[str] = []
+    fasting_list: list[int] = []
     file_path = BGCHOF_CFG_CFG_DATAFILE_PREFIX / f"{input_year}.csv"
 
     try:
@@ -40,7 +40,7 @@ def read_fasting_list(input_year: int) -> list[str] | None:
             file_reader = csv.reader(fasting_list_file, delimiter=",")
             next(file_reader, None)  # skip headers
             for row in file_reader:
-                fasting_list.append(row[1])
+                fasting_list.append(int(row[1]))
             logger.info(f"Loaded fasting data for year {input_year} from cache")
             return fasting_list
     except FileNotFoundError:
@@ -98,5 +98,3 @@ def write_fasting_list(input_year: int, input_list: list[int]) -> bool:
 
 
 # TODO: Add CLI arguments to manage cache, i.e. delete all .csv files
-
-# Made with Bob
