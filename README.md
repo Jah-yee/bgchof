@@ -37,6 +37,36 @@ For more info on Fasting please see [Background](docs/Background.md) and [FASTIN
 
 The code documentation is available in [Modules](docs/Modules.md).
 
+### Testing ###
+
+The project includes comprehensive test suites:
+
+**Unit Tests**: Run standard unit tests with pytest:
+```bash
+pytest tests/
+```
+
+**Docker Integration Tests**: Comprehensive tests that validate the complete Docker build and deployment workflow. See [tests/README_DOCKER_TESTS.md](tests/README_DOCKER_TESTS.md) for details.
+
+```bash
+# Run Docker integration tests
+pytest tests/test_docker_integration.py -v
+
+# Run with detailed output
+pytest tests/test_docker_integration.py -v -s
+```
+
+The Docker integration tests cover:
+- Docker image build process
+- Container startup and health checks
+- API endpoint functionality
+- Response validation and data correctness
+- Environment configuration
+- Performance characteristics
+- Automatic cleanup of test resources
+
+**CI/CD Integration**: The project includes GitHub Actions workflows for automated testing on push and pull requests.
+
 
 
 
