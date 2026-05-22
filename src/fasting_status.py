@@ -31,36 +31,36 @@ fastingStatusMessage = [
     _("meat"),
 ]
 
-bodyDayMessage = _(
+BODY_DAY_MESSAGE = _(
     "According to the Bulgarian Christian Orthodox norms, on this day you can consume "
 )
-andMessage = _(" and ")
+AND_MESSAGE = _(" and ")
 
 
-def fastingValue2Msg(inputValue):
+def fasting_value_to_message(input_value):
     """Form the user-friendly message with allowed food.
 
     Args:
-        intputValue: int(0..6) - the fasting status value for a date.
+        input_value: int(0..6) - the fasting status value for a date.
     Returns:
-        returnMessage: String with a comma-separated food options allowed for that date.
+        return_message: String with a comma-separated food options allowed for that date.
 
     """
-    returnMessage = ""
+    return_message = ""
     n = 1
-    if inputValue == 0:
-        returnMessage = fastingStatusMessage[0]
+    if input_value == 0:
+        return_message = fastingStatusMessage[0]
     # try len(fastingStatusMessage)
-    elif inputValue < 7:
-        returnMessage = bodyDayMessage
-        while n in range(1, inputValue):
-            returnMessage = returnMessage + fastingStatusMessage[n] + ", "
+    elif input_value < 7:
+        return_message = BODY_DAY_MESSAGE
+        while n in range(1, input_value):
+            return_message = return_message + fastingStatusMessage[n] + ", "
             n += 1
         # strip 2 chars - the last comma and space
-        returnMessage = (
-            returnMessage[:-2] + andMessage + fastingStatusMessage[inputValue] + "."
+        return_message = (
+            return_message[:-2] + AND_MESSAGE + fastingStatusMessage[input_value] + "."
         )
-    return returnMessage
+    return return_message
 
 
 # del _

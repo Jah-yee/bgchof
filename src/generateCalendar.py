@@ -1,5 +1,5 @@
 """A module that calculates the fasting status values for an year."""
-import sys, os
+import sys
 from datetime import date, timedelta
 
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -9,75 +9,75 @@ from datetime import date, timedelta
 import calculateEasterSunday
 
 
-def generateList(inputYear):
+def generate_list(input_year):
     """Create a list of 365 items and set a fasting status value of 6 to all to every one.
 
     Args:
-        inputYear: int, representing the year for which to generate the list.
+        input_year: int, representing the year for which to generate the list.
     Returns:
-        fastingList: A list of 365 6's.
+        fasting_list: A list of 365 6's.
     Raises:
         ValueError: if the argument is not an int
     """
-    fastingList = []
-    if type(inputYear) is int:
-        firstDay = date(inputYear, 1, 1)
-        lastDay = date(inputYear, 12, 31)
-        for n in range(int((lastDay - firstDay).days) + 1):
-            fastingList.append(6)
-        return fastingList
+    fasting_list = []
+    if isinstance(input_year, int):
+        first_day = date(input_year, 1, 1)
+        last_day = date(input_year, 12, 31)
+        #for n in range(int((last_day - first_day).days) + 1):
+        #   fasting_list.append(6)
+        fasting_list = [6]* (int((last_day - first_day).days) + 1)
+        return fasting_list
     else:
         raise ValueError("Please supply an int argument representing an year.")
-        return None
 
-
-def generateBaseFasting(inputYear, inputList):
+def generateBaseFasting(input_year, input_list):
     """Apply the basic fasting (i.e. non-holiday weekday) rules.
 
     General rules are - Wed and Fri - set status to 4.
     Exceptions - Jan 5, Aug 29, Sep 14.
 
     Args:
-        inputYear: int, representing the year for which to generate the list.
-        inputList: a list of ints who's value will be modified to match the base fasting.
+        input_year: int, representing the year for which to generate the list.
+        input_list: a list of ints who's value will be modified to match the base fasting.
     Returns:
-        fastingList: A list with applied base fasting rules.
+        fasting_list: A list with applied base fasting rules.
     """
     # starting Jan 1st set the statuses for the base, 1-day fasting rules:
-    firstDay = date(inputYear, 1, 1)
-    lastDay = date(inputYear, 12, 31)
+    first_day = date(input_year, 1, 1)
+    last_day = date(input_year, 12, 31)
     # single day fasting
 
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
         # each wed, fri -  4 (fish)
         if (day.weekday() == 2) or (day.weekday() == 4):
-            inputList[n] = 4
+            input_list[n] = 4
     # Jan 5 is the day before Holy Epiphany - 2 (no oil); if  on Sat or Sun -> 3 (plus oil)
-    janFive = date(inputYear, 1, 5)
-    if janFive.weekday() > 4:
-        inputList[4] = 3
+    jan_five = date(input_year, 1, 5)
+    if jan_five.weekday() > 4:
+        input_list[4] = 3
     else:
-        inputList[4] = 2
+        input_list[4] = 2
     # Aug 29 - 2 (no oil) ; if  on Sat or Sun -> 3 (plus oil)
-    augTwentyNine = date(inputYear, 8, 29)
-    augTwentyNineYearDay = yearDayCurrYear(augTwentyNine)
-    if augTwentyNine.weekday() > 4:
-        inputList[augTwentyNineYearDay - 1] = 3
+    aug_twenty_nine = date(input_year, 8, 29)
+    aug_twenty_nine_year_day = date_number(aug_twenty_nine)
+    if aug_twenty_nine.weekday() > 4:
+        input_list[aug_twenty_nine_year_day - 1] = 3
     else:
-        inputList[augTwentyNineYearDay - 1] = 2
+        input_list[aug_twenty_nine_year_day - 1] = 2
     # Sept 14 - 3 (hot food, cold food, plant based oil)
-    septFourteen = date(inputYear, 9, 14)
-    septFourteenYearDay = yearDayCurrYear(septFourteen)
-    inputList[septFourteenYearDay - 1] = 2
+    sept_fourteen = date(input_year, 9, 14)
+    sept_fourteen_year_day = date_number(sept_fourteen)
+    input_list[sept_fourteen_year_day - 1] = 2
     # <goodFri> - 0 - no food, no water
-    # Easter Sunday calculation is expensive, try to do it once per calendar generation and then send it all procedures
+    # Easter Sunday calculation is expensive,
+    #try to do it once per calendar generation and then send it all procedures
 
     # return just the list as the calndar is global, is that ok?
-    return inputList
+    return input_list
 
 
-def resurrectionFast(inputDate: date, inputList: list):
+def resurrection_fast(input_date: date, input_list: list):
     """Apply fasting rules for the Resurrection (a.k.a. Easter) Fast.
 
     The resurreciton starts 7 weeks before Easter Sunday
@@ -95,117 +95,117 @@ def resurrectionFast(inputDate: date, inputList: list):
     - first week should be 2 for Mon-Fri and 3 for the weekend
 
     Args:
-        inputYear: int, representing the year for which to generate the list.
-        inputList: a list of ints who's value will be modified to match the base fasting.
+        input_year: int, representing the year for which to generate the list.
+        input_list: a list of ints who's value will be modified to match the base fasting.
     Returns:
-        fastingList: A list with applied fasting status values for the Resurrection Fast.
+        fasting_list: A list with applied fasting status values for the Resurrection Fast.
     """
-    firstDay = inputDate
+    first_day = input_date
     for n in range(1, 8):  # next seven days
-        day = firstDay + timedelta(days=n)
-        inputList[yearDayCurrYear(day) - 1] = 6
-    firstDay = day
+        day = first_day + timedelta(days=n)
+        input_list[date_number(day) - 1] = 6
+    first_day = day
     for n in range(1, 8):  # next seven days
-        day = firstDay + timedelta(days=n)
-        inputList[yearDayCurrYear(day) - 1] = 5
-    firstDay = day
+        day = first_day + timedelta(days=n)
+        input_list[date_number(day) - 1] = 5
+    first_day = day
     for n in range(1, 8):  # next 7 days
-        day = firstDay + timedelta(days=n)
+        day = first_day + timedelta(days=n)
         if day.weekday() < 5:
-            inputList[yearDayCurrYear(day) - 1] = 2
+            input_list[date_number(day) - 1] = 2
         else:
-            inputList[yearDayCurrYear(day) - 1] = 3
-    firstDay = day
+            input_list[date_number(day) - 1] = 3
+    first_day = day
 
     for n in range(1, 29):  # next 28 days
-        day = firstDay + timedelta(days=n)
+        day = first_day + timedelta(days=n)
         # if day.weekday() < 5:
-        #    inputList[yearDayCurrYear(day) - 1] = 2
+        #    input_list[date_number(day) - 1] = 2
         # else:
-        inputList[yearDayCurrYear(day) - 1] = 3
-    firstDay = day
+        input_list[date_number(day) - 1] = 3
+    first_day = day
     for n in range(1, 8):  # next seven days
-        day = firstDay + timedelta(days=n)
+        day = first_day + timedelta(days=n)
         if day.weekday() < 6:
-            inputList[yearDayCurrYear(day) - 1] = 3
+            input_list[date_number(day) - 1] = 3
         else:
-            inputList[yearDayCurrYear(day) - 1] = 4
-    firstDay = day
+            input_list[date_number(day) - 1] = 4
+    first_day = day
     for n in range(1, 8):  # next seven days
-        day = firstDay + timedelta(days=n)
+        day = first_day + timedelta(days=n)
         if day.weekday() < 4:
-            inputList[yearDayCurrYear(day) - 1] = 2
+            input_list[date_number(day) - 1] = 2
         elif day.weekday() == 4:
-            inputList[yearDayCurrYear(day) - 1] = 0
+            input_list[date_number(day) - 1] = 0
         elif day.weekday() == 5:
-            inputList[yearDayCurrYear(day) - 1] = 3
+            input_list[date_number(day) - 1] = 3
         else:
-            inputList[yearDayCurrYear(day) - 1] = 6
-    firstDay = day
+            input_list[date_number(day) - 1] = 6
+    first_day = day
     for n in range(1, 8):  # next seven days
-        day = firstDay + timedelta(days=n)
-        inputList[yearDayCurrYear(day) - 1] = 6
+        day = first_day + timedelta(days=n)
+        input_list[date_number(day) - 1] = 6
 
     # the Annunciation if celebrated on March 25 (fixed)
     # if this is not in the Holy Week, fish is allowed
     # check for Holy Week
-    inputList[yearDayCurrYear(date(inputDate.year, 3, 25)) - 1] = 4
+    input_list[date_number(date(input_date.year, 3, 25)) - 1] = 4
 
-    return inputList
+    return input_list
 
 
-def stPeterAndPaulFast(pentecostDate: date, inputList: list):
+def st_peter_and_paul_fast(pentecost_date: date, input_list: list):
     """Apply the fasting rules for St Peter and Paul's Fast.
 
     St Peter's Fasts start on the Monday after the 1st Sunday after Pentecost
     it ends on June 29th (fixed) - st Peter & Paul
-    find the 1st sunday after pentecostDate
+    find the 1st sunday after pentecost_date
 
     TODO - check if there are 14 days b/w start and 29th.
     if yes - we need one 'fast free' week (status 6) before the fast starts
 
     Args:
-        pentecostDate:  datetime.date, 50 days after Easter Sunday.
-        inputList: a list of ints who's value will be modified to match the base fasting.
+        pentecost_date:  datetime.date, 50 days after Easter Sunday.
+        input_list: a list of ints who's value will be modified to match the base fasting.
     Returns:
-        fastingList: A list with applied fasting status values for the St. Peter and Paul's Fast.
+        fasting_list: A list with applied fasting status values for the St. Peter and Paul's Fast.
     """
-    if pentecostDate.weekday() == 6:
-        firstDay = pentecostDate
+    if pentecost_date.weekday() == 6:
+        first_day = pentecost_date
     else:
-        firstDay = pentecostDate
-        while firstDay.weekday() < 7:
-            firstDay += timedelta(days=1)
-    # print('first sunday after penetecost',firstDay.strftime('%d-%m-%Y'))
-    firstDay += timedelta(days=1)  # we actually start *after* the 1st sunday
-    # lastDay is June 28 - the day before St. Peter and Paul's feast - fixed
-    lastDay = date(pentecostDate.year, 6, 28)
-    if date(pentecostDate.year, 6, 29) - pentecostDate > timedelta(days=14):
+        first_day = pentecost_date
+        while first_day.weekday() < 7:
+            first_day += timedelta(days=1)
+    # print('first sunday after penetecost',first_day.strftime('%d-%m-%Y'))
+    first_day += timedelta(days=1)  # we actually start *after* the 1st sunday
+    # last_day is June 28 - the day before St. Peter and Paul's feast - fixed
+    last_day = date(pentecost_date.year, 6, 28)
+    if date(pentecost_date.year, 6, 29) - pentecost_date > timedelta(days=14):
         # isert code for fast free week here
         for i in range(0, 7):
-            day = firstDay + timedelta(days=i)
-            inputList[yearDayCurrYear(day)] = 6
+            day = first_day + timedelta(days=i)
+            input_list[date_number(day)] = 6
         # shift firsDay with one week
-        firstDay = firstDay + timedelta(7)
+        first_day = first_day + timedelta(7)
         # go on with the stdandard rules -- THIS NEEDS HEAVT TESTS
-        for n in range(int((lastDay - firstDay).days) + 1):
-            day = firstDay + timedelta(days=n)
+        for n in range(int((last_day - first_day).days) + 1):
+            day = first_day + timedelta(days=n)
             if (day.weekday() == 2) or (day.weekday() == 4):
-                inputList[yearDayCurrYear(day) - 1] = 3
+                input_list[date_number(day) - 1] = 3
             else:
-                inputList[yearDayCurrYear(day) - 1] = 4
+                input_list[date_number(day) - 1] = 4
     else:
-        for n in range(int((lastDay - firstDay).days) + 1):
-            day = firstDay + timedelta(days=n)
+        for n in range(int((last_day - first_day).days) + 1):
+            day = first_day + timedelta(days=n)
             if (day.weekday() == 2) or (day.weekday() == 4):
-                inputList[yearDayCurrYear(day) - 1] = 3
+                input_list[date_number(day) - 1] = 3
             else:
-                inputList[yearDayCurrYear(day) - 1] = 4
+                input_list[date_number(day) - 1] = 4
 
-    return inputList
+    return input_list
 
 
-def dormitionFast(inputYear, inputList):
+def dormition_fast(input_year, input_list):
     """Apply the fasting rules for the Dorminion Fast.
 
     The Dormition of the Mother of God is celebrated on Aug 15 as a fixed day
@@ -221,32 +221,32 @@ def dormitionFast(inputYear, inputList):
     Aug 15 should be a non-fasting day (needs double checking)
 
     Args:
-        inputYear:  int, the year for which to calculate the rules.
-        inputList: a list of ints who's value will be modified to match the base fasting.
+        input_year:  int, the year for which to calculate the rules.
+        input_list: a list of ints who's value will be modified to match the base fasting.
     Returns:
-        inputList: A list with applied fasting status values for the St. Peter and Paul's Fast.
+        input_list: A list with applied fasting status values for the St. Peter and Paul's Fast.
     """
-    firstDay = date(inputYear, 8, 1)
-    lastDay = date(inputYear, 8, 14)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        dayNumber = yearDayCurrYear(day)
+    first_day = date(input_year, 8, 1)
+    last_day = date(input_year, 8, 14)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        day_number = date_number(day)
         #    if (day.weekday() == 0) or (day.weekday() == 2) or (day.weekday() == 4):
-        #        inputList[dayNumber - 1] = 1
+        #        input_list[day_number - 1] = 1
         #    elif (day.weekday() == 1) or (day.weekday() == 3):
-        #        inputList[dayNumber - 1] = 2
+        #        input_list[day_number - 1] = 2
         #    elif day.weekday() > 4:
-        inputList[dayNumber - 1] = 3
+        input_list[day_number - 1] = 3
     # Aug 6
-    inputList[yearDayCurrYear(date(inputYear, 8, 6)) - 1] = 4
+    input_list[date_number(date(input_year, 8, 6)) - 1] = 4
     # Aug 15
-    # if date(inputYear, 8, 15).weekday() == 2 or date(inputYear, 8, 15).weekday() == 4:
-    inputList[yearDayCurrYear(date(inputYear, 8, 15)) - 1] = 6
+    # if date(input_year, 8, 15).weekday() == 2 or date(input_year, 8, 15).weekday() == 4:
+    input_list[date_number(date(input_year, 8, 15)) - 1] = 6
     # All done - return the list
-    return inputList
+    return input_list
 
 
-def nativityFast(inputYear, inputList):
+def nativity_fast(input_year, input_list):
     """Apply the fasting rules for the Nativity Fast.
 
     The Nativity Fast is on fixed dates each year
@@ -257,120 +257,122 @@ def nativityFast(inputYear, inputList):
     Dec25 - Jan4 - No fasting (meat - 6)
 
     Args:
-        inputYear:  int, the year for which to calculate the rules.
-        inputList: a list of ints who's value will be modified to match the base fasting.
+        input_year:  int, the year for which to calculate the rules.
+        input_list: a list of ints who's value will be modified to match the base fasting.
     Returns:
-        inputList: A list with applied fasting status values for the St. Peter and Paul's Fast.
+        input_list: A list with applied fasting status values for the St. Peter and Paul's Fast.
     """
-    firstDay = date(inputYear, 11, 15)
-    lastDay = date(inputYear, 11, 21)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        dayNumber = yearDayCurrYear(day)
-        inputList[dayNumber - 1] = 3
-    firstDay = date(inputYear, 11, 22)
-    lastDay = date(inputYear, 12, 19)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        dayNumber = yearDayCurrYear(day)
+    first_day = date(input_year, 11, 15)
+    last_day = date(input_year, 11, 21)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        day_number = date_number(day)
+        input_list[day_number - 1] = 3
+    first_day = date(input_year, 11, 22)
+    last_day = date(input_year, 12, 19)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        day_number = date_number(day)
         if (day.weekday() != 2) and (day.weekday() != 4):
-            inputList[dayNumber - 1] = 4
+            input_list[day_number - 1] = 4
         else:
-            inputList[dayNumber - 1] = 3
-    firstDay = date(inputYear, 12, 20)
-    lastDay = date(inputYear, 12, 24)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        dayNumber = yearDayCurrYear(day)
-        inputList[dayNumber - 1] = 3
-    firstDay = date(inputYear, 12, 25)
-    lastDay = date(inputYear, 12, 31)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        dayNumber = yearDayCurrYear(day)
-        inputList[dayNumber - 1] = 6
-    firstDay = date(inputYear, 1, 1)
-    lastDay = date(inputYear, 1, 4)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        dayNumber = yearDayCurrYear(day)
-        inputList[dayNumber - 1] = 6
-    return inputList
+            input_list[day_number - 1] = 3
+    first_day = date(input_year, 12, 20)
+    last_day = date(input_year, 12, 24)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        day_number = date_number(day)
+        input_list[day_number - 1] = 3
+    first_day = date(input_year, 12, 25)
+    last_day = date(input_year, 12, 31)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        day_number = date_number(day)
+        input_list[day_number - 1] = 6
+    first_day = date(input_year, 1, 1)
+    last_day = date(input_year, 1, 4)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        day_number = date_number(day)
+        input_list[day_number - 1] = 6
+    return input_list
 
 
-def yearDayCurrYear(inputDate: date):
+def date_number(input_date: date):
     """For a given date calculate the day number within the year.
 
     Args:
-        inputDate: datetime.date for which to get the day number.
+        input_date: datetime.date for which to get the day number.
 
     Returns:
         day number - int (0..365/6)
     """
-    return int(inputDate.toordinal() - date(inputDate.year, 1, 1).toordinal() + 1)
+    return int(input_date.toordinal() - date(input_date.year, 1, 1).toordinal() + 1)
 
 
-def _printCalendar(inputYear, inputList):
+def _print_calendar(input_year, input_list):
+    """
     # debugging purposes - print a list of dates and fasting status
-    # example with similar iteration https://blog.finxter.com/iterating-through-a-range-of-dates-using-python-with-datetime/
+    # example with similar iteration 
+    # https://blog.finxter.com/iterating-through-a-range-of-dates-using-python-with-datetime/
+    """
+    first_day = date(input_year, 1, 1)
+    last_day = date(input_year, 12, 31)
+    for n in range(int((last_day - first_day).days) + 1):
+        day = first_day + timedelta(days=n)
+        # print(day.strftime('%d-%m-%Y'),',',day.weekday(),input_list[n])
+        print(day.strftime("%d-%m-%Y"), ",", day.strftime("%a"), input_list[n])
 
-    firstDay = date(inputYear, 1, 1)
-    lastDay = date(inputYear, 12, 31)
-    for n in range(int((lastDay - firstDay).days) + 1):
-        day = firstDay + timedelta(days=n)
-        # print(day.strftime('%d-%m-%Y'),',',day.weekday(),inputList[n])
-        print(day.strftime("%d-%m-%Y"), ",", day.strftime("%a"), inputList[n])
 
-
-def fastingYearList(inputYear):
+def fastingYearList(input_year):
     """Create a list and apply all rules in turn on it.
 
     Args:
-        inputYear: integer - the year for which to do the calculations.
+        input_year: integer - the year for which to do the calculations.
     Returns:
-        fastingList: a list of integer 365 values (0..6)
+        fasting_list: a list of integer 365 values (0..6)
     """
-    fastingList = generateList(inputYear)
-    generateBaseFasting(inputYear, fastingList)
-    easterDate = calculateEasterSunday.calcEaster(inputYear)
-    easterFastStartDate = easterDate - timedelta(days=63)
-    resurrectionFast(easterFastStartDate, fastingList)
-    pentecostDate = easterDate + timedelta(days=49)  # the 50th date after Easter Sunday
-    stPeterAndPaulFast(pentecostDate, fastingList)
-    dormitionFast(inputYear, fastingList)
-    nativityFast(inputYear, fastingList)
+    fasting_list = generate_list(input_year)
+    generateBaseFasting(input_year, fasting_list)
+    easter_date = calculateEasterSunday.calcEaster(input_year)
+    easter_fast_start_date = easter_date - timedelta(days=63)
+    resurrection_fast(easter_fast_start_date, fasting_list)
+    pentecost_date = easter_date + timedelta(days=49)  # the 50th date after Easter Sunday
+    st_peter_and_paul_fast(pentecost_date, fasting_list)
+    dormition_fast(input_year, fasting_list)
+    nativity_fast(input_year, fasting_list)
 
-    return fastingList
+    return fasting_list
 
 
-def getVeganDays(inputList):
+def get_vegan_days(input_list):
     """Count the Vegan (no meat or animal based products allowed) days for a period.
 
     Args:
-        inputList: a list of integers(0..6)
+        input_list: a list of integers(0..6)
     Returns:
-        veganDays: int - the number of items from the inputList with values less than 4.
+        vegan_dayss: int - the number of items from the input_list with values less than 4.
     """
-    veganDays = 0
-    for n in range(len(inputList)):
-        if int(inputList[n]) < 4:
-            veganDays += 1
-    return veganDays
+    vegan_days = 0
+    for n in enumerate(len(input_list)):
+        if int(input_list[n]) < 4:
+            vegan_days += 1
+    return vegan_days
 
 
-def getVegetarianDays(inputList):
+def get_vegetarian_days(input_list):
     """Count the Vegetarian (no meat, but poultry allowed) days for a period.
 
     Args:
-        inputList: a list of integers(0..6)
+        input_list: a list of integers(0..6)
     Returns:
-        veganDays: int - the number of items from the inputList with values of 4 or 5.
+        vegan_days: int - the number of items from the input_list with values of 4 or 5.
     """
-    vegetarianDays = 0
-    for n in range(len(inputList)):
-        if int(inputList[n]) > 3 and int(inputList[n]) < 6:
-            vegetarianDays += 1
-    return vegetarianDays
+    vegetarian_days = 0
+    for n in enumerate(len(input_list)):
+        if int(input_list[n]) > 3 and int(input_list[n]) < 6:
+            vegetarian_days += 1
+    return vegetarian_days
 
 
 def main(argv):
@@ -379,30 +381,28 @@ def main(argv):
     Args:
         yearNumber: int - the year for which to do calculations
     Returns:
-        myList: a list of 365 integer values (0..6)
+        my_list: a list of 365 integer values (0..6)
     Raises:
         valueError: if argument is not an int
 
     """
     if (len(argv) > 2) or (len(argv) < 2):
-        sys.stderr.write(
-            "USAGE: %s <year for which to generate a fasting caledndar in format YYYY> \n"
-            % (argv[0])
-        )
+        sys.stderr.write(f"USAGE:{argv[0]} <year for which to generate \
+                        a fasting caledndar in format YYYY> \n")
         return None
     else:
-        sInputYear = argv[1]
+        s_input_year = argv[1]
     # check for valid type
     try:
-        iInputYear = int(sInputYear)
+        i_input_year = int(s_input_year)
     except ValueError:
         sys.stderr.write(
-            "The argument should be an year for which to generate a fasting calendar\n"
+            "The argument should be an year \
+                for which to generate a fasting calendar\n"
         )
     # do some validation if needed
-    # generate the lsit
-    myList = fastingYearList(iInputYear)
-    return myList
+    # generate the list
+    return fastingYearList(i_input_year)
 
 
 if __name__ == "__main__":

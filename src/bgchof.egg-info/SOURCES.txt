@@ -4,8 +4,8 @@ pyproject.toml
 setup.py
 src/bgchof.py
 src/calculateEasterSunday.py
-src/fastingIO.py
-src/fastingStatus.py
+src/fasting_io.py
+src/fasting_status.py
 src/generateCalendar.py
 src/bgchof.egg-info/PKG-INFO
 src/bgchof.egg-info/SOURCES.txt

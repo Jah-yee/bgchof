@@ -5,7 +5,8 @@ Uses .csv files in CFG_DATAFILE_PREFIX to read from and write into.
 
 # import generateCalendar
 import csv
-import sys, os
+import sys
+import os
 
 if "BGCHOF_CFG_CFG_DATAFILE_PREFIX" not in os.environ:
     BGCHOF_CFG_CFG_DATAFILE_PREFIX = "./.bgchofcache/"
@@ -14,46 +15,47 @@ else:
 CFG_DATAFILE_MODE = 0o777
 
 
-def readFastingList(inputYear):
+def read_fasting_list(input_year):
     """Load contents of .csv cache file into a list.
 
     Args:
-        inputYear: int representing the year for which to load the cache file.
+        input_year: int representing the year for which to load the cache file.
 
     Returns:
-        fastingList: a list of [int(0..365) dayNumber, int(0..6) statusValue].
+        fasting_list: a list of [int(0..365) dayNumber, int(0..6) statusValue].
     Raises:
         FileNotFoundError: if cache file doesn't exists. Moves on to create a new one.
     """
-    fastingList = []
-    fileName = BGCHOF_CFG_CFG_DATAFILE_PREFIX + str(inputYear) + ".csv"
+    fasting_list = []
+    file_name = BGCHOF_CFG_CFG_DATAFILE_PREFIX + str(input_year) + ".csv"
     try:
-        with open(fileName, mode="r") as fastingListFile:
-            fileReader = csv.reader(fastingListFile, delimiter=",")
-            next(fileReader, None)  # skip headers --> should we validate instead?
-            for row in fileReader:
-                fastingList.append(row[1])
-            return fastingList
+        with open(file_name, mode="r") as fasting_list_file:
+            file_reader = csv.reader(fasting_list_file, delimiter=",")
+            next(file_reader, None)  # skip headers --> should we validate instead?
+            for row in file_reader:
+                fasting_list.append(row[1])
+            return fasting_list
     except FileNotFoundError as e:
         msg = (
             "Can't find the data file for year "
-            + str(inputYear)
+            + str(input_year)
             + ". Creating new one...\n"
         )
         sys.stderr.write(msg)
         return None
 
 
-def writeFastingList(inputYear, inputList):
+def write_fasting_list(input_year, input_list):
     """Dump an year-worth of fasting statuses into a .csv cache file.
 
     Args:
-        inputYear: an int representing the year for which the status values.
-        inputList: a list of [int(0..365) dayNumber, int(0..6) statusValue]
+        input_year: an int representing the year for which the status values.
+        input_list: a list of [int(0..365) dayNumber, int(0..6) statusValue]
     Returns:
         True: if serialization was successful.
     Raises:
-        Returns error messages if cache directory exists or can't be created, if cache file can't be created.
+        Returns error messages if cache directory exists or can't be created, 
+        if cache file can't be created.
     """
     # try to create the cache directory, write error to stdout if exists
     if not os.path.isdir(BGCHOF_CFG_CFG_DATAFILE_PREFIX):
@@ -67,16 +69,16 @@ def writeFastingList(inputYear, inputList):
             exit(1)
     else:
         sys.stderr.write("Cache directory already exists.\n")
-    fileName = BGCHOF_CFG_CFG_DATAFILE_PREFIX + str(inputYear) + ".csv"
+    file_name = BGCHOF_CFG_CFG_DATAFILE_PREFIX + str(input_year) + ".csv"
     try:
-        with open(fileName, mode="w") as fastingListFile:
-            fileWriter = csv.writer(fastingListFile, delimiter=",")
-            fileWriter.writerow(["dayNumber", "Status"])
-            for n in range(len(inputList)):
-                fileWriter.writerow([n + 1, inputList[n]])
+        with open(file_name, mode="w") as fasting_list_file:
+            file_writer = csv.writer(fasting_list_file, delimiter=",")
+            file_writer.writerow(["dayNumber", "Status"])
+            for n in range(len(input_list)):
+                file_writer.writerow([n + 1, input_list[n]])
         return True
     except:
-        msg = "Can't create data file for year " + str(inputYear) + ".\n"
+        msg = "Can't create data file for year " + str(input_year) + ".\n"
         sys.stderr.write(msg)
         exit(1)
 

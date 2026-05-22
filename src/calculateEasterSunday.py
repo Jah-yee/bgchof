@@ -1,90 +1,104 @@
-"""Calculate the date for Easter Sunday according to the Bulgarian Christian Orthodox Church Typikon (1980 edition, p. 510-512).
+"""
+Calculate the date for Easter Sunday 
+according to the Bulgarian Christian Orthodox Church Typikon
+(1980 edition, p. 510-512).
 
 For use in i.e. time shifting holidays and fasting
-Easter Sunday should be the 1st Sunday after the first full moon after the Spring Equinox
+Easter Sunday should be the 1st Sunday after the first full moon after 
+the Spring Equinox
 According to Bulgarian Christian Orthodox Typikon,
-the date of Easter Sunday is found by dividing the year by 28 and by 19 and using lookup tables
+the date of Easter Sunday is found by dividing the year by 28 and by 19 
+and using lookup tables
 The result should be b/w APR 4 and May 11 for the 20th and 21st centuries.
 """
 import datetime
 from datetime import date, timedelta
 import sys
-
+import warnings
+from bgchof_settings import I_FIRST_VALID_YEAR, I_LAST_VALID_YEAR
 # global constants
-from bgchofSettings import iFIRSTVALIDYEAR, iLASTVALIDYEAR
 # Bulgaria implements the Gregorian calendar in 1916, valid dates are beyond 1917
 # check here http://5ko.free.fr/bg/jul.php
 
 
-def _calculateMonthAndLineNumber(inputYear):
-
+def _calculate_month_and_line_number(input_year):
+    """ Calculates the month for Easter Sunday
+        and the line number in the Tipikon LUTs
+    input_year"""
     # result
-    monthAndLineNumber = []
+    month_and_line_number = []
 
-    aprilList19 = [15, 4, 12, 1, 9, 17, 6, 14, 3, 11, 0, 8, 16, 5, 13, 2, 10]
+    april_list_19 = [15, 4, 12, 1, 9, 17, 6, 14, 3, 11, 0, 8, 16, 5, 13, 2, 10]
 
-    mayList19 = [13, 2, 10, 18, 7]
+    may_list_19 = [13, 2, 10, 18, 7]
 
     # edge cases: if ramainder is 13 or 2  or 10 it is a member of both
     # current implementation will asume April for all 3 edge cases
 
-    remainder19 = inputYear % 19
+    remainder_19 = input_year % 19
 
-    for i in aprilList19:
-        if i == remainder19:
-            monthAndLineNumber.append(4)
-            monthAndLineNumber.append(aprilList19.index(i))
-            return monthAndLineNumber
-    for j in mayList19:
-        if j == remainder19:
-            monthAndLineNumber.append(5)
-            monthAndLineNumber.append(mayList19.index(j))
-            return monthAndLineNumber
+    for i in april_list_19:
+        if i == remainder_19:
+            month_and_line_number.append(4)
+            month_and_line_number.append(april_list_19.index(i))
+            return month_and_line_number
+    for j in may_list_19:
+        if j == remainder_19:
+            month_and_line_number.append(5)
+            month_and_line_number.append(may_list_19.index(j))
+            return month_and_line_number
+    sys.stderr.write(
+            "You've just found an error in the Tiplon LUTs for year",input_year
+        )
+    return None
 
 
-def calcEaster(inputYear):
+def calc_easter(input_year):
     """Calculate Easter Sunday based on look-up tables.
 
     Args:
-        inputYear: an integer representing the year for which to calculate EasterSunday
+        inputYear: an integer representing the year f
+        or which to calculate EasterSunday
     Returns:
-        resultDate: a datetime.date object representing Easter Sunday for inputYear.
+        result_ate: a datetime.date object 
+        representing Easter Sunday for inputYear.
     Raises
-        ValueError: If inputYear is not set, not an int or not between iLASTVALIDYEARand iFIRSTVALIDYEAR
+        ValueError: If inputYear is not set, not an int 
+        or not between I_LAST_VALID_YEARand I_FIRST_VALID_YEAR
 
     """
     if (
-        not inputYear
-        or not isinstance(inputYear, int)
-        or inputYear < iFIRSTVALIDYEAR
-        or inputYear > iLASTVALIDYEAR
+        not input_year
+        or not isinstance(input_year, int)
+        or input_year < I_FIRST_VALID_YEAR
+        or input_year > I_LAST_VALID_YEAR
     ):
 
         raise ValueError(
             "The argument should be a valid year for which to calculate Easter Sunday"
         )
-        return None
+#        return None - check if you should call return after raising an exception
 
     # if valid
     else:
-        resultYear = int(inputYear)
+        result_year = int(input_year)
     #        try:
-    #            resultYear = int(inputYear)
+    #            result_year = int(input_year)
     #        except ValueError:
     #            sys.stderr.write(
     #                "The argument should be an year for which to calculate Easter Sunday\n"
     #            )
     #            return None
     # initialize result?
-    resultMonth = 0
-    resultDay = 0
-    matchColumn = ""
-    resultDate = date.today()  # why?
+    result_month = 0
+    result_day = 0
+    match_column = ""
+    result_ate = date.today()  # why?
 
     # set century constant compensation
 
     # lookup table definition
-    aprilDict28 = {
+    april_dict_28 = {
         "II": [6, 6, 13, 13, 13, 13, 13, 20, 20, 20, 20, 27, 27, 27, 27, 27, 0],
         "III": [5, 5, 12, 12, 12, 12, 19, 19, 19, 19, 19, 26, 26, 26, 26, 0, 0],
         "IV": [4, 11, 11, 11, 11, 18, 18, 18, 18, 18, 25, 25, 25, 25, 0, 0, 0],
@@ -94,7 +108,7 @@ def calcEaster(inputYear):
         "VIII": [7, 7, 7, 14, 14, 14, 14, 21, 21, 21, 21, 21, 28, 28, 28, 28, 0],
     }
 
-    mayDict28 = {
+    may_dict_28 = {
         "II": [0, 0, 4, 4, 4],
         "III": [0, 3, 3, 3, 3],
         "IV": [2, 2, 2, 2, 2],
@@ -105,127 +119,139 @@ def calcEaster(inputYear):
     }
 
     # get the ramainders of division to 28 an to 19
-    remainder28 = inputYear % 28
-    remainder19 = inputYear % 19
+    remainder_28 = input_year % 28
 
     # get the line number
-    monthAndNumber = _calculateMonthAndLineNumber(inputYear)
+    month_and_number = _calculate_month_and_line_number(input_year)
 
-    resultMonth = monthAndNumber[0]
+    result_month = month_and_number[0]
     # check which dict element we're in
     # II
-    if remainder28 in [9, 15, 20, 26]:
-        matchColumn = "II"
+    if remainder_28 in [9, 15, 20, 26]:
+        match_column = "II"
     # III
-    elif remainder28 in [4, 10, 21, 27]:
-        matchColumn = "III"
+    elif remainder_28 in [4, 10, 21, 27]:
+        match_column = "III"
     # IV
-    elif remainder28 in [5, 11, 16, 22]:
-        matchColumn = "IV"
+    elif remainder_28 in [5, 11, 16, 22]:
+        match_column = "IV"
     # V
-    elif remainder28 in [6, 17, 23, 0]:
-        matchColumn = "V"
+    elif remainder_28 in [6, 17, 23, 0]:
+        match_column = "V"
     # VI
-    elif remainder28 in [1, 7, 12, 18]:
-        matchColumn = "VI"
+    elif remainder_28 in [1, 7, 12, 18]:
+        match_column = "VI"
     # VI
-    elif remainder28 in [2, 13, 19, 24]:
-        matchColumn = "VII"
+    elif remainder_28 in [2, 13, 19, 24]:
+        match_column = "VII"
     # VIII
-    elif remainder28 in [3, 8, 14, 25]:
-        matchColumn = "VIII"
+    elif remainder_28 in [3, 8, 14, 25]:
+        match_column = "VIII"
     # III
 
-    # now get the item matching colum and row; substract 1 from the row number, to account for 0..n indexing
-    if monthAndNumber[0] == 4:
-        for k, v in aprilDict28.items():
-            if k == matchColumn:
-                # if len(v) <= monthAndNumber[1] or v[monthAndNumber[1]]==0:
-                if v[monthAndNumber[1]] == 0:
+    # now get the item matching colum and row; substract 1 from the row number,
+    # to account for 0..n indexing
+    if month_and_number[0] == 4:
+        for k, v in april_dict_28.items():
+            if k == match_column:
+                # if len(v) <= month_and_number[1] or v[month_and_number[1]]==0:
+                if v[month_and_number[1]] == 0:
                     # aparently this is the edge case so we're in May
-                    monthAndNumber[0] = 5
-                    monthAndNumber[1] -= 14
-                    resultMonth = 5
+                    month_and_number[0] = 5
+                    month_and_number[1] -= 14
+                    result_month = 5
                 else:
-                    resultDay = v[monthAndNumber[1]]
+                    result_day = v[month_and_number[1]]
 
-    if (monthAndNumber[0] == 5):
-        for k, v in mayDict28.items():
-            if k == matchColumn:
-                    resultDay = v[monthAndNumber[1]]
+    if month_and_number[0] == 5:
+        for k, v in may_dict_28.items():
+            if k == match_column:
+                result_day = v[month_and_number[1]]
 
-    """Correction for century
-    the look-up tables in the Tipikon are proven valid for 1900-2099 where there are 13 day difference
-    between Old Style and New Style
-    dates before or after that should be corrected so that there are
-    5.10.1582 - 28.02.1700 - 10 days (-3 delta from the Tipikon)
-    29.02.1700 - 28.02.1800 - 11 days (-2 delta)
-    29.02.1800 - 28.02.1900 - 12 days (-1 delta)
-    2100 +   14 days (+1 delta)
-    more here http://5ko.free.fr/bg/jul.php
-    """
+#    """
+#    Correction for century
+#    the look-up tables in the Tipikon are proven valid for
+#                    1900-2099 where there are 13 day difference
+#    between Old Style and New Style
+#    dates before or after that should be corrected so that there are
+#    5.10.1582 - 28.02.1700 - 10 days (-3 delta from the Tipikon)
+#    29.02.1700 - 28.02.1800 - 11 days (-2 delta)
+#    29.02.1800 - 28.02.1900 - 12 days (-1 delta)
+#    2100 +   14 days (+1 delta)
+#    more here http://5ko.free.fr/bg/jul.php
+#    """
 
     # check if dates are b/w apr 4 and may 11
-    resultDate = datetime.date(resultYear, resultMonth, resultDay)
-    if resultYear < 1700:
-        centuryTimedelta=timedelta(days=3)
-        resultDate = resultDate - centuryTimedelta
-    elif resultYear < 1800:    
-        centuryTimedelta=timedelta(days=2)
-        resultDate = resultDate - centuryTimedelta
-    elif resultYear < 1900:    
-        centuryTimedelta=timedelta(days=1)
-        resultDate = resultDate - centuryTimedelta
-    elif resultYear > 2099:    
-        centuryTimedelta=timedelta(days=1)
-        resultDate = resultDate + centuryTimedelta
-    return resultDate
+    result_ate = datetime.date(result_year, result_month, result_day)
+    if result_year < 1700:
+        century_time_delta=timedelta(days=3)
+        result_ate = result_ate - century_time_delta
+    elif result_year < 1800:
+        century_time_delta=timedelta(days=2)
+        result_ate = result_ate - century_time_delta
+    elif result_year < 1900:
+        century_time_delta=timedelta(days=1)
+        result_ate = result_ate - century_time_delta
+    elif result_year > 2099:
+        century_time_delta=timedelta(days=1)
+        result_ate = result_ate + century_time_delta
+    return result_ate
 
 
 # the check below is not valid for i.e. 1600, 1638, 1695 etc.
 # it should probably be moved to tests anyway
 #    try:
-#        if (resultDate >= datetime.date(resultYear,4,4)) and (resultDate <= datetime.date(resultYear,5,11)):
-#            return resultDate
+#        if (result_ate >= datetime.date(result_year,4,4))
+#        and (result_ate <= datetime.date(result_year,5,11)):
+#            return result_ate
 #    except:
 #        sys.stderr.write("Warning: Date should be between Apr 4 and May 11, something is wrong\n")
 #        return None
 
+def calcEaster(input_year):
+    '''
+    Legacy function - compatibility reasons
+    use calc_easter() instead
+    '''
+    warnings.warn("calcEaster is being deprecated, pls use calc_easter().")
+    return calc_easter(input_year)
 
 def main(argv):
     """CLI interface to calculate Easter Sunday.
 
     Args:
-        inputDate: An integer argument in the YYYY format. Should be between iFIRSTVALIDYEAR and iLASTVALIDYEAR.
-        no arguments or more than one: Returns an error message.
+        input_date: An integer argument in the YYYY format.
+        Should be between I_FIRST_VALID_YEAR and I_LAST_VALID_YEAR.
+        Mo arguments or more than one: Returns an error message.
         Non-int arument: Raises a ValueError.
 
     """
-    # check for number of arguments - should be one (year) plus one (name of program itself)
+    # check for number of arguments -
+    # should be one (year) plus one (name of program itself)
     if (len(argv) > 2) or (len(argv) < 2):
-        sys.stderr.write(
-            "USAGE: %s <year for which to calculate Easter Sunday in format YYYY> \n"
-            % (argv[0])
-        )
+        error_string = f"USAGE: {argv[0]} <year for which to \
+                        calculate Easter Sunday in format YYYY> \n"
+
+        sys.stderr.write(error_string)
         return None
-    else:
-        sInputYear = argv[1]
+
+    s_input_year = argv[1]
     # check for valid type
     try:
-        iInputYear = int(sInputYear)
+        i_nput_year = int(s_input_year)
     except ValueError:
         sys.stderr.write(
             "The argument should be an year for which to calculate Easter Sunday\n"
         )
         return None
-    if (iInputYear < iFIRSTVALIDYEAR) or (iInputYear > iLASTVALIDYEAR):
+    if (i_nput_year < I_FIRST_VALID_YEAR) or (i_nput_year > I_LAST_VALID_YEAR):
         sys.stderr.write("The requested year is not valid.\n")
         return None
 
-    # find the date fo Easter Sunday
-    dEasterSunday = calcEaster(iInputYear)
+    # find the date for Easter Sunday
+    d_easter_sunday = calc_easter(i_nput_year)
     # should we print or not?
-    print(dEasterSunday.strftime("%d-%m-%Y"))
+    print(d_easter_sunday.strftime("%d-%m-%Y"))
 
 
 if __name__ == "__main__":

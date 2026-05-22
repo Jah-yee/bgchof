@@ -22,7 +22,7 @@ def api_msgForDate():
                 "<h1>Fasting Diet For "
                 + date.isoformat(theDate)
                 + "</h1><p>"
-                + str(bgchof.getFastingStatusForDate(theDate))
+                + str(bgchof.get_fasting_message_for_date(theDate))
                 + "</p>"
             )
         except ValueError:
@@ -34,7 +34,7 @@ def api_msgForDate():
             "<h1>Fasting Diet For "
             + date.isoformat(theDate)
             + "</h1><p>"
-            + str(bgchof.getFastingStatusForDate(theDate))
+            + str(bgchof.get_fasting_message_for_date(theDate))
             + "</p>"
         )
 

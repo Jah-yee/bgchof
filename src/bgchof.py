@@ -9,22 +9,23 @@ the user asks for a particular date/week/month/year
 - bassed on the request, form the output
 
 """
-import sys, os
+import sys
 from datetime import date
+import warnings
 
 # set sys.path
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from fastingIO import readFastingList, writeFastingList
-from fastingStatus import fastingValue2Msg
+from fasting_io import read_fasting_list, write_fasting_list
+from fasting_status import fasting_value_to_message
 
 # from calculateEasterSunday import calcEaster
-from generateCalendar import fastingYearList, yearDayCurrYear
+from generateCalendar import fastingYearList, date_number
 
 # from src.calculateEasterSunday import calcEaster
 
 
-def getFastingMessageForDate(inputDate: date):
+def get_fasting_message_for_date(input_date: date):
     """Calculate the fasting status and forms a text message for a particular date.
 
     Args:
@@ -35,20 +36,20 @@ def getFastingMessageForDate(inputDate: date):
 
     """
     # check if we have the list structure pre-populated
-    myFastingList = readFastingList(inputDate.year)
-    if myFastingList is None:  # we found no file, we need to generate a list
-        myFastingList = fastingYearList(inputDate.year)
+    my_fasting_list = read_fasting_list(input_date.year)
+    if my_fasting_list is None:  # we found no file, we need to generate a list
+        my_fasting_list = fastingYearList(input_date.year)
         # make sure we serialize the calendar, so it can be re-used in the future
-        writeFastingList(inputDate.year, myFastingList)
-        myFastingList = readFastingList(
-            inputDate.year
-        )  # think how to avoid calling this twice
+        write_fasting_list(input_date.year, my_fasting_list)
+        #my_fasting_list = read_fasting_list(
+        #    input_date.year
+        #)  # think how to avoid calling this twice
     # get the date number in the year
-    dateNumber = yearDayCurrYear(inputDate)
-    return fastingValue2Msg(int(myFastingList[dateNumber - 1]))
+#    date_number = date_number(input_date)
+    return fasting_value_to_message(int(my_fasting_list[date_number(input_date) - 1]))
 
 
-def getStatusForDate(inputDate: date):
+def get_status_for_date(input_date: date):
     """Calculate the fasting status for a particular date.
 
     Args:
@@ -59,17 +60,32 @@ def getStatusForDate(inputDate: date):
 
     """
     # check if we have the list structure pre-populated
-    myFastingList = readFastingList(inputDate.year)
-    if myFastingList is None:  # we found no file, we need to generate a list
-        myFastingList = fastingYearList(inputDate.year)
+    my_fasting_list = read_fasting_list(input_date.year)
+    if my_fasting_list is None:  # we found no file, we need to generate a list
+        my_fasting_list = fastingYearList(input_date.year)
         # make sure we serialize the calendar, so it can be re-used in the future
-        writeFastingList(inputDate.year, myFastingList)
-        myFastingList = readFastingList(
-            inputDate.year
-        )  # think how to avoid calling this twice
+        write_fasting_list(input_date.year, my_fasting_list)
+        #my_fasting_list = read_fasting_list(
+        #    input_date.year
+        #)  # think how to avoid calling this twice
     # get the date number in the year
-    dateNumber = yearDayCurrYear(inputDate)
-    return int(myFastingList[dateNumber - 1])
+    return int(my_fasting_list[date_number(input_date) - 1])
+
+def getStatusForDate(input_date: date):
+    """
+    Keep for compatibility
+    """
+    warnings.warn("getStatusForDate is being deprecated, pls use get_status_for_date().")
+    return get_status_for_date(input_date)
+
+def getFastingMessageForDate(input_date: date):
+    """
+    Keep for compatibility
+    """
+    warnings.warn("getFastingMessageForDate is being deprecated,\
+                pls use get_fasting_message_for_date().")
+    return get_fasting_message_for_date(input_date)
+
 
 
 def main(argv):
@@ -87,29 +103,23 @@ def main(argv):
     """
     # check for number of arguments - should be one (year) plus one (name of program itself)
     if (len(argv) > 2) or (len(argv) < 1):
-        sys.stderr.write(
-            "USAGE: %s <date for which to get the orthodox fasting status> \n"
-            % (argv[0])
-        )
+        sys.stderr.write("USAGE:$python /path/to/bgchof.py <date for which to get the orthodox fasting status>\n")
         return None
     elif len(argv) == 1:
-        # sys.stderr.write("you provided no input\n")
+        #print("NoThe argument should be an day in the format yyyy-mm-dd)
         # return None
-        dInputDate = date.today()
+        d_input_date = date.today()
     else:
-        sInputDate = argv[1]
+        s_input_date = argv[1]
         # check for valid type
         try:
-            dInputDate = date.fromisoformat(sInputDate)
+            d_input_date = date.fromisoformat(s_input_date)
         except ValueError:
-            sys.stderr.write("The argument should be an day in the format yyyy-mm-dd\n")
+            sys.stderr.write("The argument should be an day in the format yyyy-mm-dd")
             return None
 
     # get the status
-    resultStatus = getFastingMessageForDate(dInputDate)
-
-    return resultStatus
-
+    return get_fasting_message_for_date(d_input_date)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

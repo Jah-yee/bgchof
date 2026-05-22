@@ -9,4 +9,6 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
+ENV PYTHONPATH=/app/src:$PYTHONPATH
+
 CMD [ "python3", "api/api.py", "run", "--host=0.0.0.0"]
