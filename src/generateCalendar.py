@@ -4,7 +4,6 @@ from datetime import date, timedelta
 
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
 # from calculateEasterSunday import calcEaster
 import calculateEasterSunday
 
@@ -313,7 +312,7 @@ def date_number(input_date: date):
 def _print_calendar(input_year, input_list):
     """
     # debugging purposes - print a list of dates and fasting status
-    # example with similar iteration 
+    # example with similar iteration
     # https://blog.finxter.com/iterating-through-a-range-of-dates-using-python-with-datetime/
     """
     first_day = date(input_year, 1, 1)

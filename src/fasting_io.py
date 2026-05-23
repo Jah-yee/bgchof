@@ -90,7 +90,7 @@ def write_fasting_list(input_year: int, input_list: list[int]) -> bool:
                 file_writer.writerow([n, status])
         logger.info(f"Successfully wrote fasting data for year {input_year} to cache")
         return True
-    except (OSError, IOError) as e:
+    except OSError as e:
         error_msg = f"Can't create data file for year {input_year}: {e}"
         logger.error(error_msg)
         sys.stderr.write(f"{error_msg}\n")

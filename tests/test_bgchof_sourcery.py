@@ -1,7 +1,16 @@
-import pytest
 import sys
 from datetime import date
-from bgchof import get_fasting_message_for_date, get_status_for_date, getStatusForDate, getFastingMessageForDate, main
+
+import pytest
+
+from bgchof import (
+    get_fasting_message_for_date,
+    get_status_for_date,
+    getFastingMessageForDate,
+    getStatusForDate,
+    main,
+)
+
 
 # Parametrized test for get_fasting_message_for_date with various realistic test values
 @pytest.mark.parametrize("input_date, expected_output, test_id", [
@@ -53,7 +62,7 @@ def test_deprecated_functions(input_date, expected_status, expected_message, tes
 ])
 def test_main(argv, expected_output, test_id, monkeypatch, capsys):
     """Test the main function with various command-line arguments.
-    
+
     Tests both successful execution with valid dates and error handling
     for invalid inputs like missing arguments, extra arguments, and
     malformed date strings.

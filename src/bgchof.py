@@ -10,17 +10,16 @@ the user asks for a particular date/week/month/year
 
 """
 import sys
-from datetime import date
 import warnings
+from datetime import date
 
 # set sys.path
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from fasting_io import read_fasting_list, write_fasting_list
 from fasting_status import fasting_value_to_message
 
 # from calculateEasterSunday import calcEaster
-from generateCalendar import fastingYearList, date_number
+from generateCalendar import date_number, fastingYearList
 
 # from src.calculateEasterSunday import calcEaster
 
@@ -75,15 +74,14 @@ def getStatusForDate(input_date: date):
     """
     Keep for compatibility
     """
-    warnings.warn("getStatusForDate is being deprecated, pls use get_status_for_date().")
+    warnings.warn("getStatusForDate is being deprecated, pls use get_status_for_date().", stacklevel=2)
     return get_status_for_date(input_date)
 
 def getFastingMessageForDate(input_date: date):
     """
     Keep for compatibility
     """
-    warnings.warn("getFastingMessageForDate is being deprecated,\
-                pls use get_fasting_message_for_date().")
+    warnings.warn("getFastingMessageForDate is being deprecated, pls use get_fasting_message_for_date().", stacklevel=2)
     return get_fasting_message_for_date(input_date)
 
 

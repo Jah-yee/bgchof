@@ -10,9 +10,10 @@ This test validates the complete Docker build and deployment workflow:
 """
 import subprocess
 import time
-import requests
-import pytest
 from datetime import date
+
+import pytest
+import requests
 
 
 class TestDockerIntegration:
@@ -25,19 +26,19 @@ class TestDockerIntegration:
     BASE_URL = f"http://localhost:{HOST_PORT}"
     BUILD_TIMEOUT = 300  # 5 minutes for build
     STARTUP_TIMEOUT = 30  # 30 seconds for container startup
-    
+
     @classmethod
     def setup_class(cls):
         """Build Docker image before running tests."""
         print(f"\n🔨 Building Docker image: {cls.IMAGE_NAME}")
-        
+
         # Build the Docker image
         build_cmd = [
             "docker", "build",
             "-t", cls.IMAGE_NAME,
             "."
         ]
-        
+
         try:
             result = subprocess.run(
                 build_cmd,
@@ -46,7 +47,7 @@ class TestDockerIntegration:
                 timeout=cls.BUILD_TIMEOUT,
                 check=True
             )
-            print(f"✅ Docker image built successfully")
+            print("✅ Docker image built successfully")
             if result.stdout:
                 print(f"Build output: {result.stdout[-500:]}")  # Last 500 chars
         except subprocess.CalledProcessError as e:
@@ -59,8 +60,8 @@ class TestDockerIntegration:
     @classmethod
     def teardown_class(cls):
         """Clean up Docker resources after all tests."""
-        print(f"\n🧹 Cleaning up Docker resources")
-        
+        print("\n🧹 Cleaning up Docker resources")
+
         # Stop and remove container if it exists
         subprocess.run(
             ["docker", "stop", cls.CONTAINER_NAME],
@@ -72,7 +73,7 @@ class TestDockerIntegration:
             capture_output=True,
             timeout=10
         )
-        
+
         # Remove test image
         subprocess.run(
             ["docker", "rmi", cls.IMAGE_NAME],
@@ -84,13 +85,13 @@ class TestDockerIntegration:
     def setup_method(self):
         """Start container before each test."""
         print(f"\n🚀 Starting container: {self.CONTAINER_NAME}")
-        
+
         # Remove any existing container with the same name
         subprocess.run(
             ["docker", "rm", "-f", self.CONTAINER_NAME],
             capture_output=True
         )
-        
+
         # Start the container
         run_cmd = [
             "docker", "run",
@@ -99,7 +100,7 @@ class TestDockerIntegration:
             "-p", f"{self.HOST_PORT}:{self.CONTAINER_PORT}",
             self.IMAGE_NAME
         ]
-        
+
         try:
             result = subprocess.run(
                 run_cmd,
@@ -110,10 +111,10 @@ class TestDockerIntegration:
             )
             container_id = result.stdout.strip()
             print(f"✅ Container started: {container_id[:12]}")
-            
+
             # Wait for container to be ready
             self._wait_for_container_ready()
-            
+
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to start container: {e.stderr}")
             raise
@@ -132,7 +133,7 @@ class TestDockerIntegration:
                 print(f"\n📋 Container logs:\n{logs_result.stdout[-1000:]}")
         except Exception as e:
             print(f"⚠️  Could not retrieve logs: {e}")
-        
+
         # Stop and remove container
         subprocess.run(
             ["docker", "stop", self.CONTAINER_NAME],
@@ -147,9 +148,9 @@ class TestDockerIntegration:
 
     def _wait_for_container_ready(self):
         """Wait for container to be ready to accept requests."""
-        print(f"⏳ Waiting for container to be ready...")
+        print("⏳ Waiting for container to be ready...")
         start_time = time.time()
-        
+
         while time.time() - start_time < self.STARTUP_TIMEOUT:
             try:
                 # Check if container is still running
@@ -164,10 +165,10 @@ class TestDockerIntegration:
                     text=True,
                     timeout=5
                 )
-                
+
                 if result.stdout.strip() != "true":
                     raise RuntimeError("Container stopped unexpectedly")
-                
+
                 # Try to connect to the API
                 response = requests.get(
                     f"{self.BASE_URL}/",
@@ -176,8 +177,8 @@ class TestDockerIntegration:
                 if response.status_code == 200:
                     print(f"✅ Container ready after {time.time() - start_time:.1f}s")
                     return
-                    
-            except (requests.exceptions.ConnectionError, 
+
+            except (requests.exceptions.ConnectionError,
                     requests.exceptions.Timeout):
                 time.sleep(1)
                 continue
@@ -185,7 +186,7 @@ class TestDockerIntegration:
                 print(f"⚠️  Error during readiness check: {e}")
                 time.sleep(1)
                 continue
-        
+
         raise TimeoutError(
             f"Container did not become ready within {self.STARTUP_TIMEOUT} seconds"
         )
@@ -204,13 +205,13 @@ class TestDockerIntegration:
             timeout=5,
             check=True
         )
-        
+
         assert result.stdout.strip() == "true", "Container should be running"
 
     def test_root_endpoint_responds(self):
         """Test that root endpoint returns expected HTML content."""
         response = requests.get(f"{self.BASE_URL}/", timeout=5)
-        
+
         assert response.status_code == 200, "Root endpoint should return 200"
         assert "Bulgarian Christian Orthodox Fasting" in response.text, \
             "Root endpoint should contain project title"
@@ -223,7 +224,7 @@ class TestDockerIntegration:
             f"{self.BASE_URL}/api/v1/msgForDate",
             timeout=5
         )
-        
+
         assert response.status_code == 200, "API should return 200"
         assert "Fasting Diet For" in response.text, \
             "Response should contain fasting diet header"
@@ -240,7 +241,7 @@ class TestDockerIntegration:
             params={"date": test_date},
             timeout=5
         )
-        
+
         assert response.status_code == 200, "API should return 200 for valid date"
         assert test_date in response.text, \
             f"Response should contain requested date {test_date}"
@@ -257,7 +258,7 @@ class TestDockerIntegration:
             params={"date": test_date},
             timeout=5
         )
-        
+
         assert response.status_code == 200, "API should return 200"
         assert test_date in response.text, "Response should contain the date"
         # Easter Sunday should allow all foods (status 6)
@@ -271,7 +272,7 @@ class TestDockerIntegration:
             params={"date": "invalid-date"},
             timeout=5
         )
-        
+
         assert response.status_code == 200, "API should return 200 even for errors"
         assert "Value Error" in response.text, \
             "Response should indicate value error"
@@ -285,14 +286,14 @@ class TestDockerIntegration:
             "2023-12-25",  # Christmas
             "2024-01-01",  # New Year
         ]
-        
+
         for test_date in test_dates:
             response = requests.get(
                 f"{self.BASE_URL}/api/v1/msgForDate",
                 params={"date": test_date},
                 timeout=5
             )
-            
+
             assert response.status_code == 200, \
                 f"API should return 200 for date {test_date}"
             assert test_date in response.text, \
@@ -309,13 +310,13 @@ class TestDockerIntegration:
             timeout=5,
             check=True
         )
-        
+
         logs = result.stdout + result.stderr
-        
+
         # Check for Flask startup indicators
         assert "Running on" in logs or "Serving Flask app" in logs, \
             "Logs should show Flask is running"
-        
+
         # Check that there are no Python errors
         error_indicators = ["Traceback", "Error:", "Exception:", "Failed"]
         for indicator in error_indicators:
@@ -325,7 +326,7 @@ class TestDockerIntegration:
     def test_response_content_type_is_html(self):
         """Verify API responses have correct content type."""
         response = requests.get(f"{self.BASE_URL}/", timeout=5)
-        
+
         assert "text/html" in response.headers.get("Content-Type", ""), \
             "Response should have HTML content type"
 
@@ -338,7 +339,7 @@ class TestDockerIntegration:
             timeout=5
         )
         response_time = time.time() - start_time
-        
+
         assert response.status_code == 200, "API should return 200"
         assert response_time < 2.0, \
             f"API should respond within 2 seconds, took {response_time:.2f}s"
@@ -350,7 +351,7 @@ class TestDockerIntegration:
             self.CONTAINER_NAME,
             "printenv", "PYTHONPATH"
         ]
-        
+
         result = subprocess.run(
             exec_cmd,
             capture_output=True,
@@ -358,7 +359,7 @@ class TestDockerIntegration:
             timeout=5,
             check=True
         )
-        
+
         pythonpath = result.stdout.strip()
         assert "/app/src" in pythonpath, \
             f"PYTHONPATH should contain /app/src, got: {pythonpath}"
@@ -370,20 +371,20 @@ class TestDockerIntegration:
             "/app/src/bgchof.py",
             "/app/requirements.txt",
         ]
-        
+
         for file_path in required_files:
             exec_cmd = [
                 "docker", "exec",
                 self.CONTAINER_NAME,
                 "test", "-f", file_path
             ]
-            
+
             result = subprocess.run(
                 exec_cmd,
                 capture_output=True,
                 timeout=5
             )
-            
+
             assert result.returncode == 0, \
                 f"Container should have file: {file_path}"
 
