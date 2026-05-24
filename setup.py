@@ -21,8 +21,8 @@ setup(
     py_modules=[
         "bgchof",
         "calculateEasterSunday",
-        "fastingIO",
-        "fastingStatus",
+        "fasting_io",
+        "fasting_status",
         "generateCalendar",
     ],
     python_requires=">=3.9, <4",
