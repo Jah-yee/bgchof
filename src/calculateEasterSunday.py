@@ -1,21 +1,23 @@
 """
-Calculate the date for Easter Sunday 
+Calculate the date for Easter Sunday
 according to the Bulgarian Christian Orthodox Church Typikon
 (1980 edition, p. 510-512).
 
 For use in i.e. time shifting holidays and fasting
-Easter Sunday should be the 1st Sunday after the first full moon after 
+Easter Sunday should be the 1st Sunday after the first full moon after
 the Spring Equinox
 According to Bulgarian Christian Orthodox Typikon,
-the date of Easter Sunday is found by dividing the year by 28 and by 19 
+the date of Easter Sunday is found by dividing the year by 28 and by 19
 and using lookup tables
 The result should be b/w APR 4 and May 11 for the 20th and 21st centuries.
 """
 import datetime
-from datetime import date, timedelta
 import sys
 import warnings
+from datetime import date, timedelta
+
 from bgchof_settings import I_FIRST_VALID_YEAR, I_LAST_VALID_YEAR
+
 # global constants
 # Bulgaria implements the Gregorian calendar in 1916, valid dates are beyond 1917
 # check here http://5ko.free.fr/bg/jul.php
@@ -60,10 +62,10 @@ def calc_easter(input_year):
         inputYear: an integer representing the year f
         or which to calculate EasterSunday
     Returns:
-        result_ate: a datetime.date object 
+        result_ate: a datetime.date object
         representing Easter Sunday for inputYear.
     Raises
-        ValueError: If inputYear is not set, not an int 
+        ValueError: If inputYear is not set, not an int
         or not between I_LAST_VALID_YEARand I_FIRST_VALID_YEAR
 
     """
@@ -213,7 +215,7 @@ def calcEaster(input_year):
     Legacy function - compatibility reasons
     use calc_easter() instead
     '''
-    warnings.warn("calcEaster is being deprecated, pls use calc_easter().")
+    warnings.warn("calcEaster is being deprecated, pls use calc_easter().", stacklevel=2)
     return calc_easter(input_year)
 
 def main(argv):

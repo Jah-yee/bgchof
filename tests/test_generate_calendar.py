@@ -1,15 +1,16 @@
 ''' Tests for the the generateCalendar Module '''
 import sys
-import os
+from pathlib import Path
+
 import pytest
 from src import generateCalendar
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 
 
 
-class TestCalendar():
+class TestCalendar:
     ''' A class of test functions. '''
 
     def test_generate_list_leap(self):
@@ -37,6 +38,6 @@ class TestCalendar():
             generate_list with an non-int argument.
         '''
         with pytest.raises(
-            ValueError, match="Please supply an int argument representing an year."
+            ValueError, match=r"Please supply an int argument representing an year\."
         ):
             generateCalendar.generate_list("someString")

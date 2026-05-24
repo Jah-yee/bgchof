@@ -1,14 +1,15 @@
 ''' Test cases for Easter Calculation'''
 import datetime
 import sys
-import os
+from pathlib import Path
+
 import pytest
 from src import calculateEasterSunday as calculateEaster
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 
-class TestEaster():
+class TestEaster:
     """A class to test Easter dates"""
 
     def test_pe_1983(self):

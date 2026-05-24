@@ -1,6 +1,6 @@
 # standard libraries
-import os
 import sys
+from pathlib import Path
 
 # local components
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))

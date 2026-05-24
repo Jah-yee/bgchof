@@ -11,13 +11,11 @@ more complex tests
 
 """
 import sys
-import os
-from datetime import date,timedelta
+from datetime import date, timedelta
+from pathlib import Path
 
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+sys.path.insert(0, str((Path(__file__).parent.parent / "src").resolve()))
 from bgchof import getStatusForDate
-
 
 
 def test_bgchof_easter_2021_may2_is_6():
@@ -54,4 +52,4 @@ def test_status_sept_14_1976_equals_2():
 # other tests
 # test msg for locale 'en'
 
-    
+
