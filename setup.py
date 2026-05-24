@@ -20,6 +20,7 @@ setup(
     packages=find_packages(where="src"),
     py_modules=[
         "bgchof",
+        "bgchof_settings",
         "calculateEasterSunday",
         "fasting_io",
         "fasting_status",
