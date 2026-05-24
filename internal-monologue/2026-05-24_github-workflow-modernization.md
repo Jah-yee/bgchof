@@ -3,6 +3,11 @@
 ## Summary
 Streamlined GitHub Actions workflows from 3 redundant workflows to 1 efficient workflow, reducing CI runtime by ~70% while maintaining comprehensive testing.
 
+## Critical Fix Applied
+**Issue:** GitHub Actions workflow was failing with `pytest: command not found`
+**Root Cause:** Workflow was installing only `requirements.txt` (Flask only), missing test dependencies
+**Solution:** Changed installation from `pip install -r requirements.txt` to `pip install -e ".[test]"` to install test extras from pyproject.toml
+
 ## Changes Made
 
 ### 1. Documentation

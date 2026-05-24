@@ -266,7 +266,7 @@ jobs:
       - uses: actions/setup-python@v2  # Deprecated
         with:
           python-version: "3.x"  # Unspecified version
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt  # Missing test dependencies!
       - run: pytest -v
 ```
 
@@ -300,7 +300,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -e ".[test]"
 
       - name: Run tests with coverage
         run: |
