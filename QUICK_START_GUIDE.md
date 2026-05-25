@@ -6,20 +6,20 @@ This is a condensed version of the full deployment plan. For detailed instructio
 
 - AWS CLI installed and configured
 - Docker installed and running
-- Access to AWS account (region: eu-central-1)
-- ECR repository: `310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda`
+- Access to AWS account (region: <AWS_REGION>)
+- ECR repository: `<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<REPOSITORY_NAME>`
 
 ## Quick Deployment Steps
 
 ### 1. Discover Your Setup (5 min)
 ```bash
 # Find your Lambda function name
-aws lambda list-functions --region eu-central-1 | grep -i "fasting\|orthodox"
+aws lambda list-functions --region <AWS_REGION> | grep -i "fasting\|orthodox"
 
-# Get current image (replace FUNCTION_NAME)
+# Get current image (replace <LAMBDA_FUNCTION_NAME>)
 aws lambda get-function-configuration \
-  --function-name FUNCTION_NAME \
-  --region eu-central-1 \
+  --function-name <LAMBDA_FUNCTION_NAME> \
+  --region <AWS_REGION> \
   --query 'ImageUri'
 ```
 
@@ -44,63 +44,63 @@ docker stop bgchof-test && docker rm bgchof-test
 ### 3. Create Backup (5 min)
 ```bash
 # Login to ECR
-aws ecr get-login-password --region eu-central-1 | \
+aws ecr get-login-password --region <AWS_REGION> | \
   docker login --username AWS --password-stdin \
-  310391119521.dkr.ecr.eu-central-1.amazonaws.com
+  <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com
 
 # Backup current production
-docker pull 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:latest
+docker pull <ECR_REPOSITORY_URI>:latest
 docker tag \
-  310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:latest \
-  310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:production-stable
-docker push 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:production-stable
+  <ECR_REPOSITORY_URI>:latest \
+  <ECR_REPOSITORY_URI>:production-stable
+docker push <ECR_REPOSITORY_URI>:production-stable
 ```
 
 ### 4. Deploy Test Image (10 min)
 ```bash
 # Build and push test image
-docker build -t orthodox-fasting/fastapi-lambda:test-v2 .
+docker build -t <REPOSITORY_NAME>:test-v2 .
 docker tag \
-  orthodox-fasting/fastapi-lambda:test-v2 \
-  310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:test-v2
-docker push 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:test-v2
+  <REPOSITORY_NAME>:test-v2 \
+  <ECR_REPOSITORY_URI>:test-v2
+docker push <ECR_REPOSITORY_URI>:test-v2
 
-# Update production Lambda (replace FUNCTION_NAME)
+# Update production Lambda (replace <LAMBDA_FUNCTION_NAME>)
 aws lambda update-function-code \
-  --function-name FUNCTION_NAME \
-  --image-uri 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:test-v2 \
-  --region eu-central-1
+  --function-name <LAMBDA_FUNCTION_NAME> \
+  --image-uri <ECR_REPOSITORY_URI>:test-v2 \
+  --region <AWS_REGION>
 
 # Wait for update
-aws lambda wait function-updated --function-name FUNCTION_NAME --region eu-central-1
+aws lambda wait function-updated --function-name <LAMBDA_FUNCTION_NAME> --region <AWS_REGION>
 ```
 
 ### 5. Verify (5 min)
 ```bash
 # Test production endpoint (replace with your API Gateway URL)
-curl https://YOUR_API_GATEWAY_URL/api/v1/msgForDate
+curl https://<YOUR_API_GATEWAY_URL>/api/v1/msgForDate
 
 # Check logs
-aws logs tail /aws/lambda/FUNCTION_NAME --follow --region eu-central-1
+aws logs tail /aws/lambda/<LAMBDA_FUNCTION_NAME> --follow --region <AWS_REGION>
 ```
 
 ### 6. Rollback (If Needed)
 ```bash
 # Quick rollback to stable version
 aws lambda update-function-code \
-  --function-name FUNCTION_NAME \
-  --image-uri 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:production-stable \
-  --region eu-central-1
+  --function-name <LAMBDA_FUNCTION_NAME> \
+  --image-uri <ECR_REPOSITORY_URI>:production-stable \
+  --region <AWS_REGION>
 ```
 
 ### 7. Finalize (After 24h of stability)
 ```bash
 # Promote test-v2 to latest
-docker pull 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:test-v2
+docker pull <ECR_REPOSITORY_URI>:test-v2
 docker tag \
-  310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:test-v2 \
-  310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:latest
-docker push 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fastapi-lambda:latest
+  <ECR_REPOSITORY_URI>:test-v2 \
+  <ECR_REPOSITORY_URI>:latest
+docker push <ECR_REPOSITORY_URI>:latest
 ```
 
 ## Key Safety Points
@@ -120,7 +120,7 @@ docker push 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fas
 ## Troubleshooting
 
 **Lambda won't start?**
-→ Check CloudWatch logs: `aws logs tail /aws/lambda/FUNCTION_NAME --follow`
+→ Check CloudWatch logs: `aws logs tail /aws/lambda/<LAMBDA_FUNCTION_NAME> --follow`
 
 **Import errors?**
 → Verify PYTHONPATH in Dockerfile: `ENV PYTHONPATH=/app/src:$PYTHONPATH`
@@ -134,10 +134,20 @@ docker push 310391119521.dkr.ecr.eu-central-1.amazonaws.com/orthodox-fasting/fas
 ## Next Steps After Deployment
 
 1. Monitor CloudWatch metrics for 24-48 hours
-2. Test from actual client (nocmu.me)
+2. Test from actual client
 3. If stable, promote `test-v2` to `latest` tag
 4. Document any issues encountered
 5. Update this guide with actual function names/URLs
+
+## Configuration Variables
+
+Replace these placeholders with your actual values:
+- `<AWS_ACCOUNT_ID>`: Your 12-digit AWS account ID
+- `<AWS_REGION>`: Your AWS region (e.g., `eu-central-1`, `us-east-1`)
+- `<REPOSITORY_NAME>`: Your ECR repository name (e.g., `orthodox-fasting/fastapi-lambda`)
+- `<ECR_REPOSITORY_URI>`: Full ECR URI: `<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<REPOSITORY_NAME>`
+- `<LAMBDA_FUNCTION_NAME>`: Your Lambda function name
+- `<YOUR_API_GATEWAY_URL>`: Your API Gateway endpoint URL
 
 ---
 

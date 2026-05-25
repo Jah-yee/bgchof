@@ -25,6 +25,7 @@ DEPLOYMENT_STATUS.md
 AWS_DEPLOYMENT_PLAN.md
 LAMBDA_REBUILD_STRATEGY.md
 DEPLOYMENT_SUMMARY.md
+DEPLOYMENT_LOG.md
 
 # Internal Notes
 internal-monologue/
@@ -53,3 +54,6 @@ scripts/*.pyc
 htmlcov/
 .coverage
 coverage.xml
+
+# Security audit documents
+SECURITY_REVIEW.md
