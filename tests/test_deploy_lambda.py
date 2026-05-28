@@ -284,9 +284,11 @@ class TestLambdaDeployer:
     
     def test_authenticate_ecr_success(self, deployer, mock_executor):
         """Test successful ECR authentication."""
-        mock_executor.run.return_value = (0, '', '')
+        mock_executor.run.return_value = (0, 'password123', '')
         
-        result = deployer.authenticate_ecr()
+        with patch('subprocess.run') as mock_subprocess:
+            mock_subprocess.return_value = Mock(returncode=0, stdout='', stderr='')
+            result = deployer.authenticate_ecr()
         
         assert result is True
     
@@ -483,7 +485,9 @@ class TestDeploymentValidation:
         
         # Check that the command includes the region
         call_args = mock_executor.run.call_args[0][0]
-        assert f"--region {deployer.config.aws_region}" in call_args
+        # Command is passed as a list, so check if region args are in the list
+        assert '--region' in call_args
+        assert deployer.config.aws_region in call_args
     
     def test_docker_commands_use_correct_paths(self, deployer, mock_executor):
         """Test that Docker commands reference correct files."""

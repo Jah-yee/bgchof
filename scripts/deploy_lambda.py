@@ -326,6 +326,12 @@ class LambdaDeployer:
         # Login to Docker with the password
         ecr_registry = f"{self.config.aws_account_id}.dkr.ecr.{self.config.aws_region}.amazonaws.com"
         
+        # In dry run mode, skip actual docker login
+        if self.executor.dry_run:
+            self.logger.info(f"[DRY RUN] Would execute: docker login --username {ECR_LOGIN_USERNAME} --password-stdin {ecr_registry}")
+            self.logger.info("ECR authentication successful")
+            return True
+        
         # Use subprocess directly for stdin input
         try:
             result = subprocess.run(
