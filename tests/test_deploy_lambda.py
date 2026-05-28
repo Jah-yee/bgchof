@@ -258,7 +258,7 @@ class TestLambdaDeployer:
     
     def test_build_docker_image_success(self, deployer, mock_executor):
         """Test successful Docker image build."""
-        with patch('pathlib.Path.exists', return_value=True):
+        with patch('pathlib.Path.is_file', return_value=True):
             mock_executor.run.return_value = (0, '', '')
             
             result = deployer.build_docker_image()
@@ -268,14 +268,14 @@ class TestLambdaDeployer:
     
     def test_build_docker_image_no_dockerfile(self, deployer, mock_executor):
         """Test build failure when Dockerfile doesn't exist."""
-        with patch('pathlib.Path.exists', return_value=False):
+        with patch('pathlib.Path.is_file', return_value=False):
             result = deployer.build_docker_image()
             
             assert result is False
     
     def test_build_docker_image_build_failure(self, deployer, mock_executor):
         """Test build failure when Docker build fails."""
-        with patch('pathlib.Path.exists', return_value=True):
+        with patch('pathlib.Path.is_file', return_value=True):
             mock_executor.run.return_value = (1, '', 'build failed')
             
             result = deployer.build_docker_image()

@@ -36,6 +36,9 @@ EXIT_PUSH_ERROR = 5
 EXIT_LAMBDA_UPDATE_ERROR = 6
 EXIT_ROLLBACK_ERROR = 7
 
+# ECR authentication constants
+ECR_LOGIN_USERNAME = 'AWS'
+
 
 @dataclass
 class DeploymentConfig:
@@ -47,6 +50,7 @@ class DeploymentConfig:
     image_tag: str = "latest"
     backup_tag_prefix: str = "backup"
     dockerfile_path: str = "Dockerfile.lambda"
+    local_image_name: str = "lambda-deployment"
     
     @classmethod
     def from_env(cls) -> 'DeploymentConfig':
@@ -58,7 +62,7 @@ class DeploymentConfig:
             'LAMBDA_FUNCTION_NAME'
         ]
         
-        missing = [var for var in required_vars if not os.getenv(var)]
+        missing = [var for var in required_vars if not os.getenv(var) or not os.getenv(var).strip()]
         if missing:
             raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
         
@@ -99,16 +103,37 @@ class DeploymentLogger:
     
     def sanitize_message(self, message: str) -> str:
         """Remove sensitive information from log messages."""
-        # Patterns to redact
-        sensitive_patterns = [
-            'password', 'secret', 'token', 'key', 'credential',
-            'AWS_ACCESS_KEY', 'AWS_SECRET'
-        ]
+        import re
         
         sanitized = message
-        for pattern in sensitive_patterns:
-            if pattern.lower() in message.lower():
-                sanitized = sanitized.replace(pattern, '[REDACTED]')
+        
+        # Regex patterns to redact actual sensitive values, not just keywords
+        # Pattern format: (keyword)(separator)(value) -> (keyword)(separator)[REDACTED]
+        sensitive_value_patterns = [
+            # AWS credentials with various separators (=, :, space)
+            (r'(AWS_ACCESS_KEY[_ID]*\s*[=:]\s*)([A-Z0-9]+)', r'\1[REDACTED]'),
+            (r'(AWS_SECRET[_ACCESS_KEY]*\s*[=:]\s*)([A-Za-z0-9/+=]+)', r'\1[REDACTED]'),
+            # Generic patterns for password, secret, token, key, credential
+            # Handles compound words (e.g., secret_key) and various separators
+            (r'(\w*password\w*\s*[=:]\s*)([^\s]+)', r'\1[REDACTED]', re.IGNORECASE),
+            (r'(\w*secret\w*\s*[=:]\s*)([^\s]+)', r'\1[REDACTED]', re.IGNORECASE),
+            (r'(\w*token\w*\s*[=:]\s*)([^\s]+)', r'\1[REDACTED]', re.IGNORECASE),
+            (r'(\w*key\w*\s*[=:]\s*)([^\s]+)', r'\1[REDACTED]', re.IGNORECASE),
+            (r'(\w*credential\w*\s*[=:]\s*)([^\s]+)', r'\1[REDACTED]', re.IGNORECASE),
+        ]
+        
+        for pattern_tuple in sensitive_value_patterns:
+            if len(pattern_tuple) == 3:
+                pattern, replacement, flags = pattern_tuple
+                sanitized = re.sub(pattern, replacement, sanitized, flags=flags)
+            else:
+                pattern, replacement = pattern_tuple
+                sanitized = re.sub(pattern, replacement, sanitized)
+        
+        # Mask AWS account IDs in ECR URIs (12-digit numbers in ECR context)
+        # Pattern: {account-id}.dkr.ecr.{region}.amazonaws.com
+        sanitized = re.sub(r'\b(\d{12})\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com',
+                          r'[ACCOUNT_ID].dkr.ecr.\2.amazonaws.com', sanitized)
         
         return sanitized
     
@@ -132,14 +157,19 @@ class CommandExecutor:
         self.logger = logger
         self.dry_run = dry_run
     
-    def run(self, command: str, check: bool = True, capture_output: bool = True) -> Tuple[int, str, str]:
+    def run(self, command: list, check: bool = True, capture_output: bool = True) -> Tuple[int, str, str]:
         """
         Execute a shell command.
+        
+        Args:
+            command: List of command arguments (e.g., ['aws', 'lambda', 'get-function'])
+            check: Whether to check for errors
+            capture_output: Whether to capture stdout/stderr
         
         Returns:
             Tuple of (return_code, stdout, stderr)
         """
-        self.logger.info(f"Executing: {command}")
+        self.logger.info(f"Executing: {' '.join(command)}")
         
         if self.dry_run:
             self.logger.info("[DRY RUN] Command not executed")
@@ -148,7 +178,7 @@ class CommandExecutor:
         try:
             result = subprocess.run(
                 command,
-                shell=True,
+                shell=False,
                 capture_output=capture_output,
                 text=True,
                 check=False
@@ -183,10 +213,13 @@ class LambdaDeployer:
         """Get the current Lambda function image URI."""
         self.logger.info(f"Retrieving current image for Lambda function: {self.config.lambda_function_name}")
         
-        cmd = (
-            f"aws lambda get-function --function-name {self.config.lambda_function_name} "
-            f"--region {self.config.aws_region} --query 'Code.ImageUri' --output text"
-        )
+        cmd = [
+            'aws', 'lambda', 'get-function',
+            '--function-name', self.config.lambda_function_name,
+            '--region', self.config.aws_region,
+            '--query', 'Code.ImageUri',
+            '--output', 'text'
+        ]
         
         returncode, stdout, stderr = self.executor.run(cmd)
         
@@ -199,8 +232,25 @@ class LambdaDeployer:
         return image_uri
     
     def backup_current_image(self) -> bool:
-        """Backup the current ECR image with a timestamped tag."""
+        """Backup the current ECR image with a timestamped tag.
+        
+        WARNING: Race Condition Limitation
+        -----------------------------------
+        This method retrieves the current Lambda image URI, then pulls, tags,
+        and pushes it. If another deployment occurs between getting the URI and
+        completing the backup, the backup might not represent the actual
+        pre-deployment state.
+        
+        Recommendation: Use deployment pipelines (e.g., GitHub Actions, GitLab CI,
+        AWS CodePipeline) that serialize deployments to prevent concurrent
+        deployments to the same Lambda function. Alternatively, implement external
+        locking mechanisms (e.g., DynamoDB conditional writes, S3 object locks).
+        """
         self.logger.info("Starting image backup process")
+        self.logger.warning(
+            "Concurrent deployments may cause backup inconsistencies. "
+            "Ensure deployments are serialized via pipeline or locking mechanism."
+        )
         
         # Get current Lambda image if not already set
         if not self.previous_image_uri:
@@ -217,7 +267,7 @@ class LambdaDeployer:
         self.logger.info(f"Creating backup with tag: {self.backup_tag}")
         
         # Pull current image
-        cmd = f"docker pull {self.previous_image_uri}"
+        cmd = ['docker', 'pull', self.previous_image_uri]
         returncode, _, _ = self.executor.run(cmd)
         if returncode != 0:
             self.logger.error("Failed to pull current image for backup")
@@ -225,14 +275,14 @@ class LambdaDeployer:
         
         # Tag for backup
         backup_uri = f"{self.config.ecr_repository_uri}:{self.backup_tag}"
-        cmd = f"docker tag {self.previous_image_uri} {backup_uri}"
+        cmd = ['docker', 'tag', self.previous_image_uri, backup_uri]
         returncode, _, _ = self.executor.run(cmd)
         if returncode != 0:
             self.logger.error("Failed to tag backup image")
             return False
         
         # Push backup
-        cmd = f"docker push {backup_uri}"
+        cmd = ['docker', 'push', backup_uri]
         returncode, _, _ = self.executor.run(cmd)
         if returncode != 0:
             self.logger.error("Failed to push backup image")
@@ -245,12 +295,12 @@ class LambdaDeployer:
         """Build Docker image locally."""
         self.logger.info("Building Docker image")
         
-        if not Path(self.config.dockerfile_path).exists():
+        if not Path(self.config.dockerfile_path).is_file():
             self.logger.error(f"Dockerfile not found: {self.config.dockerfile_path}")
             return False
         
-        image_name = f"lambda-deployment:{self.config.image_tag}"
-        cmd = f"docker build -f {self.config.dockerfile_path} -t {image_name} ."
+        image_name = f"{self.config.local_image_name}:{self.config.image_tag}"
+        cmd = ['docker', 'build', '-f', self.config.dockerfile_path, '-t', image_name, '.']
         
         returncode, _, _ = self.executor.run(cmd, capture_output=False)
         
@@ -265,13 +315,30 @@ class LambdaDeployer:
         """Authenticate Docker with AWS ECR."""
         self.logger.info("Authenticating with AWS ECR")
         
-        cmd = (
-            f"aws ecr get-login-password --region {self.config.aws_region} | "
-            f"docker login --username AWS --password-stdin "
-            f"{self.config.aws_account_id}.dkr.ecr.{self.config.aws_region}.amazonaws.com"
-        )
+        # Get ECR login password
+        get_password_cmd = ['aws', 'ecr', 'get-login-password', '--region', self.config.aws_region]
+        returncode, password, stderr = self.executor.run(get_password_cmd)
         
-        returncode, _, _ = self.executor.run(cmd)
+        if returncode != 0:
+            self.logger.error("Failed to get ECR login password")
+            return False
+        
+        # Login to Docker with the password
+        ecr_registry = f"{self.config.aws_account_id}.dkr.ecr.{self.config.aws_region}.amazonaws.com"
+        
+        # Use subprocess directly for stdin input
+        try:
+            result = subprocess.run(
+                ['docker', 'login', '--username', ECR_LOGIN_USERNAME, '--password-stdin', ecr_registry],
+                input=password,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            returncode = result.returncode
+        except Exception as e:
+            self.logger.error(f"Docker login failed: {e}")
+            return False
         
         if returncode != 0:
             self.logger.error("ECR authentication failed")
@@ -284,18 +351,18 @@ class LambdaDeployer:
         """Tag and push the new image to ECR."""
         self.logger.info("Tagging and pushing image to ECR")
         
-        local_image = f"lambda-deployment:{self.config.image_tag}"
+        local_image = f"{self.config.local_image_name}:{self.config.image_tag}"
         remote_image = f"{self.config.ecr_repository_uri}:{self.config.image_tag}"
         
         # Tag image
-        cmd = f"docker tag {local_image} {remote_image}"
+        cmd = ['docker', 'tag', local_image, remote_image]
         returncode, _, _ = self.executor.run(cmd)
         if returncode != 0:
             self.logger.error("Failed to tag image")
             return False
         
         # Push image
-        cmd = f"docker push {remote_image}"
+        cmd = ['docker', 'push', remote_image]
         returncode, _, _ = self.executor.run(cmd, capture_output=False)
         if returncode != 0:
             self.logger.error("Failed to push image to ECR")
@@ -310,12 +377,12 @@ class LambdaDeployer:
         
         new_image_uri = f"{self.config.ecr_repository_uri}:{self.config.image_tag}"
         
-        cmd = (
-            f"aws lambda update-function-code "
-            f"--function-name {self.config.lambda_function_name} "
-            f"--image-uri {new_image_uri} "
-            f"--region {self.config.aws_region}"
-        )
+        cmd = [
+            'aws', 'lambda', 'update-function-code',
+            '--function-name', self.config.lambda_function_name,
+            '--image-uri', new_image_uri,
+            '--region', self.config.aws_region
+        ]
         
         returncode, stdout, _ = self.executor.run(cmd)
         
@@ -327,11 +394,11 @@ class LambdaDeployer:
         
         # Wait for update to complete
         self.logger.info("Waiting for Lambda function update to complete...")
-        cmd = (
-            f"aws lambda wait function-updated "
-            f"--function-name {self.config.lambda_function_name} "
-            f"--region {self.config.aws_region}"
-        )
+        cmd = [
+            'aws', 'lambda', 'wait', 'function-updated',
+            '--function-name', self.config.lambda_function_name,
+            '--region', self.config.aws_region
+        ]
         
         returncode, _, _ = self.executor.run(cmd)
         if returncode != 0:
@@ -349,17 +416,32 @@ class LambdaDeployer:
         
         self.logger.warning(f"Rolling back to previous image: {self.previous_image_uri}")
         
-        cmd = (
-            f"aws lambda update-function-code "
-            f"--function-name {self.config.lambda_function_name} "
-            f"--image-uri {self.previous_image_uri} "
-            f"--region {self.config.aws_region}"
-        )
+        cmd = [
+            'aws', 'lambda', 'update-function-code',
+            '--function-name', self.config.lambda_function_name,
+            '--image-uri', self.previous_image_uri,
+            '--region', self.config.aws_region
+        ]
         
         returncode, _, _ = self.executor.run(cmd)
         
         if returncode != 0:
             self.logger.error("Rollback failed!")
+            return False
+        
+        self.logger.info("Rollback command executed successfully")
+        
+        # Wait for rollback to complete
+        self.logger.info("Waiting for Lambda function rollback to complete...")
+        wait_cmd = [
+            'aws', 'lambda', 'wait', 'function-updated',
+            '--function-name', self.config.lambda_function_name,
+            '--region', self.config.aws_region
+        ]
+        
+        returncode, _, _ = self.executor.run(wait_cmd)
+        if returncode != 0:
+            self.logger.error("Wait command failed during rollback")
             return False
         
         self.logger.info("Rollback completed successfully")
@@ -426,13 +508,29 @@ def load_env_file(env_file: str = '.env'):
     if not env_path.exists():
         return
     
-    with open(env_path) as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                key, _, value = line.partition('=')
-                if key and value:
-                    os.environ.setdefault(key.strip(), value.strip())
+    logger = logging.getLogger(__name__)
+    
+    try:
+        with open(env_path) as f:
+            line_number = 0
+            for line in f:
+                line_number += 1
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    key, _, value = line.partition('=')
+                    if key and value:
+                        os.environ.setdefault(key.strip(), value.strip())
+                    else:
+                        logger.warning(f"Malformed line {line_number} in {env_file}: '{line}' - expected KEY=VALUE format")
+    except PermissionError as e:
+        logger.error(f"Permission denied reading {env_file}: {e}")
+        raise
+    except IOError as e:
+        logger.error(f"Error reading {env_file}: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error parsing {env_file}: {e}")
+        raise
 
 
 def main():
