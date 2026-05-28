@@ -5,7 +5,8 @@ __pycache__/
 __pycache__
 **/__pycache__/
 .pytest_cache
-
+.coverage
+coverage.xml
 # IDE
 .vscode/
 
@@ -46,6 +47,7 @@ credentials.json
 
 # AWS CLI Response Files
 response.json
+lambda-test-payload.json
 
 # Deployment Artifacts
 deployment.log
@@ -55,8 +57,7 @@ scripts/*.pyc
 
 # Test Coverage
 htmlcov/
-.coverage
-coverage.xml
+
 
 # Security audit documents
 SECURITY_REVIEW.md
