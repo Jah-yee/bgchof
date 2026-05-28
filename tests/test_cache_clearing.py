@@ -13,7 +13,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
 from fasting_io import clear_cache, BGCHOF_CFG_CFG_DATAFILE_PREFIX
-from generateCalendar import generateList
+from generateCalendar import generate_list
 
 
 class TestClearCache:
@@ -104,7 +104,7 @@ class TestClearCache:
         test_year = 2023
         
         # Generate real cache data using the system
-        fasting_list = generateList(test_year)
+        fasting_list = generate_list(test_year)
         
         # Write it to cache (this uses write_fasting_list internally)
         from fasting_io import write_fasting_list
