@@ -15,7 +15,7 @@ from datetime import date
 
 # set sys.path
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from fasting_io import read_fasting_list, write_fasting_list
+from fasting_io import read_fasting_list, write_fasting_list, clear_cache
 from fasting_status import fasting_value_to_message
 
 # from calculateEasterSunday import calcEaster
@@ -92,16 +92,56 @@ def main(argv):
     Args:
         one argument: a date in YYYY-MM-DD format for which to calculate the status
         zero arguments/no input: defaults to the current date
+        --clear-cache YEAR: clears cache for specified year
         more than 1 argument: returns an error message
         anything else: raises a value error
 
     Returns:
-        An integer (0..6) representing the fasting status
+        An integer (0..6) representing the fasting status, or None for cache operations
 
     """
+    # Check for cache clearing command
+    if len(argv) == 3 and argv[1] == "--clear-cache":
+        try:
+            year = int(argv[2])
+            
+            # Check if cache file exists and get its path
+            from fasting_io import BGCHOF_CFG_CFG_DATAFILE_PREFIX
+            cache_file = BGCHOF_CFG_CFG_DATAFILE_PREFIX / f"{year}.csv"
+            
+            if not cache_file.exists():
+                print(f"No cache file found for year {year}")
+                return None
+            
+            # Ask for confirmation
+            response = input(f"Are you sure you want to delete {cache_file}? (y/N): ")
+            if response.lower() != 'y':
+                print("Operation cancelled")
+                return None
+            
+            # Attempt to clear the cache
+            result = clear_cache(year)
+            if result:
+                print(f"Successfully cleared cache for year {year}")
+            else:
+                print(f"Failed to clear cache for year {year}")
+            return None
+            
+        except ValueError:
+            sys.stderr.write("Error: Year must be a valid integer\n")
+            return None
+        except PermissionError as e:
+            sys.stderr.write(f"Permission denied: Cannot delete cache file. {e}\n")
+            return None
+        except OSError as e:
+            sys.stderr.write(f"Error clearing cache: {e}\n")
+            return None
+    
     # check for number of arguments - should be one (year) plus one (name of program itself)
     if (len(argv) > 2) or (len(argv) < 1):
-        sys.stderr.write("USAGE:$python /path/to/bgchof.py <date for which to get the orthodox fasting status>\n")
+        sys.stderr.write("USAGE: python /path/to/bgchof.py [date|--clear-cache YEAR]\n")
+        sys.stderr.write("  date: YYYY-MM-DD format (optional, defaults to today)\n")
+        sys.stderr.write("  --clear-cache YEAR: clear cache for specified year\n")
         return None
     elif len(argv) == 1:
         #print("NoThe argument should be an day in the format yyyy-mm-dd)
@@ -113,7 +153,7 @@ def main(argv):
         try:
             d_input_date = date.fromisoformat(s_input_date)
         except ValueError:
-            sys.stderr.write("The argument should be an day in the format yyyy-mm-dd")
+            sys.stderr.write("The argument should be an day in the format yyyy-mm-dd\n")
             return None
 
     # get the status
