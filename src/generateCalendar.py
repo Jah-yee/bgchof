@@ -352,12 +352,7 @@ def get_vegan_days(input_list):
     Returns:
         vegan_dayss: int - the number of items from the input_list with values less than 4.
     """
-    vegan_days = 0
-    for n in enumerate(len(input_list)):
-        if int(input_list[n]) < 4:
-            vegan_days += 1
-    return vegan_days
-
+    return sum(1 for status in input_list if status < 4)
 
 def get_vegetarian_days(input_list):
     """Count the Vegetarian (no meat, but poultry allowed) days for a period.
@@ -367,11 +362,7 @@ def get_vegetarian_days(input_list):
     Returns:
         vegan_days: int - the number of items from the input_list with values of 4 or 5.
     """
-    vegetarian_days = 0
-    for n in enumerate(len(input_list)):
-        if int(input_list[n]) > 3 and int(input_list[n]) < 6:
-            vegetarian_days += 1
-    return vegetarian_days
+    return sum(1 for status in input_list if 3 < status < 6)
 
 
 def main(argv):
