@@ -97,4 +97,37 @@ def write_fasting_list(input_year: int, input_list: list[int]) -> bool:
         raise
 
 
-# TODO: Add CLI arguments to manage cache, i.e. delete all .csv files
+def clear_cache(year: int) -> bool:
+    """Clear cache file for a specific year.
+    
+    Args:
+        year: Year for which to clear the cache file.
+    
+    Returns:
+        True if file was deleted, False if file didn't exist.
+    
+    Raises:
+        PermissionError: If insufficient permissions to delete file.
+        OSError: If deletion fails for other reasons.
+    
+    Examples:
+        >>> clear_cache(2023)  # Clear cache for 2023
+        True
+        >>> clear_cache(2024)  # Try to clear non-existent cache
+        False
+    """
+    file_path = BGCHOF_CFG_CFG_DATAFILE_PREFIX / f"{year}.csv"
+    
+    if not file_path.exists():
+        logger.warning(f"Cache file for year {year} does not exist")
+        return False
+    
+    try:
+        file_path.unlink()
+        logger.info(f"Successfully cleared cache for year {year}")
+        return True
+    except OSError as e:
+        error_msg = f"Failed to clear cache for year {year}: {e}"
+        logger.error(error_msg)
+        sys.stderr.write(f"{error_msg}\n")
+        raise
