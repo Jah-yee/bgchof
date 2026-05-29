@@ -159,9 +159,8 @@ def st_peter_and_paul_fast(pentecost_date: date, input_list: list):
     St Peter's Fasts start on the Monday after the 1st Sunday after Pentecost
     it ends on June 29th (fixed) - st Peter & Paul
     find the 1st sunday after pentecost_date
-
-    TODO - check if there are 14 days b/w start and 29th.
-    if yes - we need one 'fast free' week (status 6) before the fast starts
+    If there are 14 days b/w start and 29th.
+    there is one 'fast free' week (status 6) before the fast starts
 
     Args:
         pentecost_date:  datetime.date, 50 days after Easter Sunday.
@@ -173,7 +172,7 @@ def st_peter_and_paul_fast(pentecost_date: date, input_list: list):
         first_day = pentecost_date
     else:
         first_day = pentecost_date
-        while first_day.weekday() < 7:
+        while first_day.weekday() != 6:
             first_day += timedelta(days=1)
     # print('first sunday after penetecost',first_day.strftime('%d-%m-%Y'))
     first_day += timedelta(days=1)  # we actually start *after* the 1st sunday
@@ -185,7 +184,8 @@ def st_peter_and_paul_fast(pentecost_date: date, input_list: list):
             day = first_day + timedelta(days=i)
             input_list[date_number(day)] = 6
         # shift firsDay with one week
-        first_day = first_day + timedelta(7)
+        first_day = first_day + timedelta(days=
+        \7)
         # go on with the stdandard rules -- THIS NEEDS HEAVT TESTS
         for n in range(int((last_day - first_day).days) + 1):
             day = first_day + timedelta(days=n)
