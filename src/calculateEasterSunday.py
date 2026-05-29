@@ -50,7 +50,7 @@ def _calculate_month_and_line_number(input_year):
             month_and_line_number.append(may_list_19.index(j))
             return month_and_line_number
     sys.stderr.write(
-            "You've just found an error in the Tiplon LUTs for year",input_year
+            f"You've just found an error in the Typikon LUTs for {input_year}\n"
         )
     return None
 
