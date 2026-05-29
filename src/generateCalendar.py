@@ -184,8 +184,7 @@ def st_peter_and_paul_fast(pentecost_date: date, input_list: list):
             day = first_day + timedelta(days=i)
             input_list[date_number(day)] = 6
         # shift firsDay with one week
-        first_day = first_day + timedelta(days=
-        \7)
+        first_day = first_day + timedelta(days=7)
         # go on with the stdandard rules -- THIS NEEDS HEAVT TESTS
         for n in range(int((last_day - first_day).days) + 1):
             day = first_day + timedelta(days=n)
